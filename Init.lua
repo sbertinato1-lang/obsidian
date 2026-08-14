@@ -1217,7 +1217,7 @@ _modules["Components/Dropdown"] = function()
             BackgroundColor3 = Theme.Get("Surface"),
             BackgroundTransparency = 0,
             ClearTextOnFocus = false,
-            TextXAlignment = Enum.TextXAlignment.Left,
+            TextXAlignment = Enum.TextXAlignment.Center,
             TextYAlignment = Enum.TextYAlignment.Center,
             ZIndex = 50,
             Parent = self.Container
@@ -1247,67 +1247,125 @@ _modules["Components/Dropdown"] = function()
 
         -- Build visible options
         local function updateOptions()
-            for _, child in pairs(self.Scroll:GetChildren()) do
-                if child:IsA("TextButton") then
-                    child:Destroy()
-                end
-            end
-
-            local query = string.lower(self.SearchQuery)
-
-            for _, opt in pairs(self.Options) do
-                local text = tostring(opt)
-
-                -- Filter options using search query
-                if query == "" or string.find(string.lower(text), query, 1, true) then
-                    local isSelected = (opt == self.Value)
-
-                    local btn = InstanceUtils.Create("TextButton", {
-                        Text = text,
-                        Font = Theme.Get("FontDescription"),
-                        TextSize = Theme.Get("TextSizeDescription"),
-                        TextColor3 = isSelected
-                            and Theme.Get("Text")
-                            or Theme.Get("SecondaryText"),
-
-                        BackgroundColor3 = isSelected
-                            and Theme.Get("Accent")
-                            or Theme.Get("Surface"),
-
-                        BackgroundTransparency = isSelected and 0.4 or 1,
-                        Size = UDim2.new(1, 0, 0, 28),
-                        AutoButtonColor = false,
-                        ZIndex = 47,
-                        Parent = self.Scroll
-                    })
-
-                    btn.MouseEnter:Connect(function()
-                        Tween.Play(btn, {
-                            BackgroundTransparency = isSelected and 0.3 or 0.8
-                        })
-                    end)
-
-                    btn.MouseLeave:Connect(function()
-                        Tween.Play(btn, {
-                            BackgroundTransparency = isSelected and 0.4 or 1
-                        })
-                    end)
-
-                    btn.MouseButton1Click:Connect(function()
-                        self.Value = opt
-                        self.ValueLabel.Text = text
-
-                        self:Toggle(false)
-
-                        if options.Callback then
-                            options.Callback(opt)
-                        end
-
-                        updateOptions()
-                    end)
-                end
-            end
-        end
+		    -- Remove old buttons
+		    for _, child in pairs(self.Scroll:GetChildren()) do
+		        if child:IsA("TextButton") then
+		            child:Destroy()
+		        end
+		    end
+		
+		    local query = string.lower(self.SearchQuery)
+		    local visibleCount = 0
+		
+		    for _, opt in pairs(self.Options) do
+		        local text = tostring(opt)
+		
+		        local matchesSearch =
+		            query == ""
+		            or string.find(
+		                string.lower(text),
+		                query,
+		                1,
+		                true
+		            )
+		
+		        if matchesSearch then
+		            visibleCount = visibleCount + 1
+		
+		            local isSelected = self.Value[opt]
+		
+		            local btn = InstanceUtils.Create("TextButton", {
+		                Text = text,
+		
+		                Font = Theme.Get("FontDescription"),
+		                TextSize = Theme.Get("TextSizeDescription"),
+		
+		                TextColor3 =
+		                    isSelected
+		                    and Theme.Get("Text")
+		                    or Theme.Get("SecondaryText"),
+		
+		                BackgroundColor3 =
+		                    isSelected
+		                    and Theme.Get("Accent")
+		                    or Theme.Get("Surface"),
+		
+		                BackgroundTransparency =
+		                    isSelected
+		                    and 0.4
+		                    or 1,
+		
+		                Size = UDim2.new(1, 0, 0, 28),
+		
+		                AutoButtonColor = false,
+		
+		                ZIndex = 47,
+		                Parent = self.Scroll
+		            })
+		
+		            btn.MouseEnter:Connect(function()
+		                Tween.Play(btn, {
+		                    BackgroundTransparency =
+		                        isSelected
+		                        and 0.3
+		                        or 0.8
+		                })
+		            end)
+		
+		            btn.MouseLeave:Connect(function()
+		                Tween.Play(btn, {
+		                    BackgroundTransparency =
+		                        isSelected
+		                        and 0.4
+		                        or 1
+		                })
+		            end)
+		
+		            btn.MouseButton1Click:Connect(function()
+		                self.Value[opt] = not self.Value[opt]
+		
+		                if not self.Value[opt] then
+		                    self.Value[opt] = nil
+		                end
+		
+		                updateValueLabel()
+		                updateOptions()
+		
+		                if options.Callback then
+		                    options.Callback(self.Value)
+		                end
+		            end)
+		        end
+		    end
+		
+		    -- Update dropdown height dynamically
+		    if self.Opened then
+		        local targetHeight
+		
+		        if visibleCount == 0 then
+		            -- Search returned nothing
+		            targetHeight = 38
+		        else
+		            targetHeight = math.min(
+		                visibleCount * 28 + 38,
+		                178
+		            )
+		        end
+		
+		        Tween.Play(
+		            self.Container,
+		            {
+		                Size = UDim2.new(
+		                    1,
+		                    0,
+		                    0,
+		                    targetHeight
+		                )
+		            },
+		            0.15
+		        )
+		    end
+		end
 
         -- Search filtering
         self.SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
@@ -1334,43 +1392,79 @@ _modules["Components/Dropdown"] = function()
 
         -- Open / close dropdown
         self.Toggle = function(self, state)
-            self.Opened = state
-            Tween.Play(self.Icon, {
-                Rotation = state and 180 or 0
-            })
-
-            if state then
-                self.Container.Visible = true
-
-                -- Search box is always available.
-                -- 38px is reserved for the search box.
-                local targetSize = UDim2.new(
-                    1,
-                    0,
-                    0,
-                    math.min(#self.Options * 28 + 38, 178)
-                )
-
-                Tween.Play(self.Container, {
-                    Size = targetSize
-                }, 0.2)
-
-            else
-                local targetSize = UDim2.new(1, 0, 0, 0)
-
-                local tween = Tween.Play(
-                    self.Container,
-                    {Size = targetSize},
-                    0.2
-                )
-
-                tween.Completed:Connect(function()
-                    if not self.Opened then
-                        self.Container.Visible = false
-                    end
-                end)
-            end
-        end
+		    self.Opened = state
+		
+		    Tween.Play(self.Icon, {
+		        Rotation = state and 180 or 0
+		    })
+		
+		    if state then
+		        self.Container.Visible = true
+		
+		        -- Count currently visible search results
+		        local query = string.lower(self.SearchQuery)
+		        local visibleCount = 0
+		
+		        for _, opt in pairs(self.Options) do
+		            local text = tostring(opt)
+		
+		            if query == ""
+		                or string.find(
+		                    string.lower(text),
+		                    query,
+		                    1,
+		                    true
+		                ) then
+		
+		                visibleCount = visibleCount + 1
+		            end
+		        end
+		
+		        local targetHeight
+		
+		        if visibleCount == 0 then
+		            targetHeight = 38
+		        else
+		            targetHeight = math.min(
+		                visibleCount * 28 + 38,
+		                178
+		            )
+		        end
+		
+		        Tween.Play(
+		            self.Container,
+		            {
+		                Size = UDim2.new(
+		                    1,
+		                    0,
+		                    0,
+		                    targetHeight
+		                )
+		            },
+		            0.2
+		        )
+		
+		    else
+		        local tween = Tween.Play(
+		            self.Container,
+		            {
+		                Size = UDim2.new(
+		                    1,
+		                    0,
+		                    0,
+		                    0
+		                )
+		            },
+		            0.2
+		        )
+		
+		        tween.Completed:Connect(function()
+		            if not self.Opened then
+		                self.Container.Visible = false
+		            end
+		        end)
+		    end
+		end
 
         -- Detect clicks reliably
         self.Button.InputBegan:Connect(function(input)
@@ -1543,7 +1637,7 @@ _modules["Components/MultiDropdown"] = function()
 
             ClearTextOnFocus = false,
 
-            TextXAlignment = Enum.TextXAlignment.Left,
+            TextXAlignment = Enum.TextXAlignment.Center,
             TextYAlignment = Enum.TextYAlignment.Center,
 
             ZIndex = 50,
