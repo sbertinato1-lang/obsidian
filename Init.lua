@@ -1399,9 +1399,10 @@ _modules["Components/Dropdown"] = function()
 		    })
 		
 		    if state then
+		        -- Cancel any pending close behavior
 		        self.Container.Visible = true
 		
-		        -- Count currently visible search results
+		        -- Count visible search results
 		        local query = string.lower(self.SearchQuery)
 		        local visibleCount = 0
 		
@@ -1445,6 +1446,7 @@ _modules["Components/Dropdown"] = function()
 		        )
 		
 		    else
+		        -- Animate closed
 		        local tween = Tween.Play(
 		            self.Container,
 		            {
@@ -1459,8 +1461,13 @@ _modules["Components/Dropdown"] = function()
 		        )
 		
 		        tween.Completed:Connect(function()
+		            -- Make sure it wasn't reopened while closing
 		            if not self.Opened then
-		                self.Container.Visible = false
+		                task.defer(function()
+		                    if not self.Opened then
+		                        self.Container.Visible = false
+		                    end
+		                end)
 		            end
 		        end)
 		    end
@@ -1518,7 +1525,7 @@ _modules["Components/MultiDropdown"] = function()
             Name = "MultiDropdown",
             Size = UDim2.new(0.95, 0, 0, Theme.Get("ComponentHeight")),
             BackgroundTransparency = 1,
-            ClipsDescendants = true,
+            ClipsDescendants = false,
             ZIndex = 5,
             AutomaticSize = Enum.AutomaticSize.Y,
             Parent = section.Content
