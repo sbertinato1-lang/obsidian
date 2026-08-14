@@ -1126,15 +1126,16 @@ function Dropdown.new(section, options)
         Name = "Dropdown",
         Size = UDim2.new(0.95, 0, 0, Theme.Get("ComponentHeight")),
         BackgroundTransparency = 1,
-        ClipsDescendants = false,
+        ClipsDescendants = true, -- Now true to handle inline expansion
         ZIndex = 5,
+        AutomaticSize = Enum.AutomaticSize.Y, -- Expand parent to fit content
         Parent = section.Content
     })
 
     self.Button = InstanceUtils.Create("TextButton", {
         Text = "",
         BackgroundColor3 = Theme.Get("Surface"),
-        Size = UDim2.new(1, 0, 1, 0),
+        Size = UDim2.new(1, 0, 0, Theme.Get("ComponentHeight")), -- Fixed height for button
         AutoButtonColor = false,
         ClipsDescendants = false,
         ZIndex = 40,
@@ -1184,14 +1185,14 @@ function Dropdown.new(section, options)
 
     self.Container = InstanceUtils.Create("Frame", {
         Name = "Container",
-        Size = UDim2.new(0, 0, 0, 0), -- Size will be updated on open
-        Position = UDim2.new(0, 0, 0, 0), -- Position will be updated on open
+        Size = UDim2.new(1, 0, 0, 0), -- Inline expansion
+        Position = UDim2.new(0, 0, 0, Theme.Get("ComponentHeight") + 2),
         BackgroundColor3 = Theme.Get("Secondary"),
         BorderSizePixel = 0,
         Visible = false,
         ClipsDescendants = true,
-        ZIndex = 10000, -- Extremely high ZIndex for popups
-        Parent = section.Window.ScreenGui -- Parent to ScreenGui to avoid clipping
+        ZIndex = 45,
+        Parent = self.Instance -- Inline!
     })
     InstanceUtils.ApplyCorner(self.Container, 4)
     InstanceUtils.ApplyStroke(self.Container, Theme.Get("Border"), 1)
@@ -1203,18 +1204,13 @@ function Dropdown.new(section, options)
         ScrollBarImageColor3 = Theme.Get("Border"),
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        ZIndex = 10001, -- Higher than Container
+        ZIndex = 46,
         Parent = self.Container
     })
     InstanceUtils.Create("UIListLayout", {
         SortOrder = Enum.SortOrder.LayoutOrder,
         Parent = self.Scroll
     })
-
-    self.SetOptions = function(self, options)
-        self.Options = options
-        updateOptions()
-    end
 
     local function updateOptions()
         for _, child in pairs(self.Scroll:GetChildren()) do
@@ -1228,23 +1224,23 @@ function Dropdown.new(section, options)
                 Font = Theme.Get("FontDescription"),
                 TextSize = Theme.Get("TextSizeDescription"),
                 TextColor3 = isSelected and Theme.Get("Accent") or Theme.Get("SecondaryText"),
-                BackgroundColor3 = isSelected and Theme.Get("Surface") or Theme.Get("Surface"),
-                BackgroundTransparency = isSelected and 0.2 or 1,
+                BackgroundColor3 = isSelected and Theme.Get("Accent") or Theme.Get("Surface"),
+                BackgroundTransparency = isSelected and 0.8 or 1, -- Transparent fill highlight
                 Size = UDim2.new(1, 0, 0, 28),
                 AutoButtonColor = false,
-                ZIndex = 10002, -- Higher than Scroll
+                ZIndex = 47,
                 Parent = self.Scroll
             })
             
             if isSelected then
-                InstanceUtils.ApplyStroke(btn, Theme.Get("Accent"), 1)
+                -- Removed outline stroke as requested, using transparent fill above
             end
 
             btn.MouseEnter:Connect(function()
-                Tween.Play(btn, {BackgroundTransparency = 0.5})
+                Tween.Play(btn, {BackgroundTransparency = isSelected and 0.6 or 0.8})
             end)
             btn.MouseLeave:Connect(function()
-                Tween.Play(btn, {BackgroundTransparency = 1})
+                Tween.Play(btn, {BackgroundTransparency = isSelected and 0.8 or 1})
             end)
 
             btn.MouseButton1Click:Connect(function()
@@ -1259,32 +1255,21 @@ function Dropdown.new(section, options)
         end
     end
 
+    self.SetOptions = function(self, options)
+        self.Options = options
+        updateOptions()
+    end
+
     self.Toggle = function(self, state)
         self.Opened = state
         Tween.Play(self.Icon, {Rotation = state and 180 or 0})
         
         if state then
-            -- Calculate absolute position
-            local absPos = self.Button.AbsolutePosition
-            local absSize = self.Button.AbsoluteSize
-            
-            -- Fallback if AbsolutePosition is 0,0 (wait for render)
-            local attempts = 0
-            while absPos.X == 0 and absPos.Y == 0 and attempts < 5 do
-                task.wait()
-                absPos = self.Button.AbsolutePosition
-                absSize = self.Button.AbsoluteSize
-                attempts = attempts + 1
-            end
-            
-            self.Container.Position = UDim2.new(0, absPos.X, 0, absPos.Y + absSize.Y + 2)
-            self.Container.Size = UDim2.new(0, absSize.X, 0, 0)
             self.Container.Visible = true
-            
-            local targetSize = UDim2.new(0, absSize.X, 0, math.min(#self.Options * 28, 140))
+            local targetSize = UDim2.new(1, 0, 0, math.min(#self.Options * 28, 140))
             Tween.Play(self.Container, {Size = targetSize}, 0.2)
         else
-            local targetSize = UDim2.new(0, self.Container.Size.X.Offset, 0, 0)
+            local targetSize = UDim2.new(1, 0, 0, 0)
             local tween = Tween.Play(self.Container, {Size = targetSize}, 0.2)
             tween.Completed:Connect(function()
                 if not self.Opened then
@@ -1334,14 +1319,16 @@ function MultiDropdown.new(section, options)
         Name = "MultiDropdown",
         Size = UDim2.new(0.95, 0, 0, Theme.Get("ComponentHeight")),
         BackgroundTransparency = 1,
+        ClipsDescendants = true,
         ZIndex = 5,
+        AutomaticSize = Enum.AutomaticSize.Y,
         Parent = section.Content
     })
 
     self.Button = InstanceUtils.Create("TextButton", {
         Text = "",
         BackgroundColor3 = Theme.Get("Surface"),
-        Size = UDim2.new(1, 0, 1, 0),
+        Size = UDim2.new(1, 0, 0, Theme.Get("ComponentHeight")),
         AutoButtonColor = false,
         ClipsDescendants = false,
         ZIndex = 40,
@@ -1391,14 +1378,14 @@ function MultiDropdown.new(section, options)
 
     self.Container = InstanceUtils.Create("Frame", {
         Name = "Container",
-        Size = UDim2.new(0, 0, 0, 0), -- Size will be updated on open
-        Position = UDim2.new(0, 0, 0, 0), -- Position will be updated on open
+        Size = UDim2.new(1, 0, 0, 0), -- Inline expansion
+        Position = UDim2.new(0, 0, 0, Theme.Get("ComponentHeight") + 2),
         BackgroundColor3 = Theme.Get("Secondary"),
         BorderSizePixel = 0,
         Visible = false,
         ClipsDescendants = true,
-        ZIndex = 10000, -- Extremely high ZIndex for popups
-        Parent = section.Window.ScreenGui -- Parent to ScreenGui to avoid clipping
+        ZIndex = 45,
+        Parent = self.Instance -- Inline!
     })
     InstanceUtils.ApplyCorner(self.Container, 4)
     InstanceUtils.ApplyStroke(self.Container, Theme.Get("Border"), 1)
@@ -1410,7 +1397,7 @@ function MultiDropdown.new(section, options)
         ScrollBarImageColor3 = Theme.Get("Border"),
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        ZIndex = 10001, -- Higher than Container
+        ZIndex = 46,
         Parent = self.Container
     })
     InstanceUtils.Create("UIListLayout", {
@@ -1422,11 +1409,6 @@ function MultiDropdown.new(section, options)
         local count = 0
         for _ in pairs(self.Value) do count = count + 1 end
         self.ValueLabel.Text = count > 0 and (count .. " selected") or "None"
-    end
-
-    self.SetOptions = function(self, options)
-        self.Options = options
-        updateOptions()
     end
 
     local function updateOptions()
@@ -1441,23 +1423,23 @@ function MultiDropdown.new(section, options)
                 Font = Theme.Get("FontDescription"),
                 TextSize = Theme.Get("TextSizeDescription"),
                 TextColor3 = isSelected and Theme.Get("Accent") or Theme.Get("SecondaryText"),
-                BackgroundColor3 = isSelected and Theme.Get("Surface") or Theme.Get("Surface"),
-                BackgroundTransparency = isSelected and 0.2 or 1,
+                BackgroundColor3 = isSelected and Theme.Get("Accent") or Theme.Get("Surface"),
+                BackgroundTransparency = isSelected and 0.8 or 1, -- Transparent fill highlight
                 Size = UDim2.new(1, 0, 0, 28),
                 AutoButtonColor = false,
-                ZIndex = 10002, -- Higher than Scroll
+                ZIndex = 47,
                 Parent = self.Scroll
             })
             
             if isSelected then
-                InstanceUtils.ApplyStroke(btn, Theme.Get("Accent"), 1)
+                -- Removed outline stroke as requested, using transparent fill above
             end
 
             btn.MouseEnter:Connect(function()
-                Tween.Play(btn, {BackgroundTransparency = 0.5})
+                Tween.Play(btn, {BackgroundTransparency = isSelected and 0.6 or 0.8})
             end)
             btn.MouseLeave:Connect(function()
-                Tween.Play(btn, {BackgroundTransparency = 1})
+                Tween.Play(btn, {BackgroundTransparency = isSelected and 0.8 or 1})
             end)
 
             btn.MouseButton1Click:Connect(function()
@@ -1474,32 +1456,21 @@ function MultiDropdown.new(section, options)
         end
     end
 
+    self.SetOptions = function(self, options)
+        self.Options = options
+        updateOptions()
+    end
+
     self.Toggle = function(self, state)
         self.Opened = state
         Tween.Play(self.Icon, {Rotation = state and 180 or 0})
         
         if state then
-            -- Calculate absolute position
-            local absPos = self.Button.AbsolutePosition
-            local absSize = self.Button.AbsoluteSize
-            
-            -- Fallback if AbsolutePosition is 0,0 (wait for render)
-            local attempts = 0
-            while absPos.X == 0 and absPos.Y == 0 and attempts < 5 do
-                task.wait()
-                absPos = self.Button.AbsolutePosition
-                absSize = self.Button.AbsoluteSize
-                attempts = attempts + 1
-            end
-            
-            self.Container.Position = UDim2.new(0, absPos.X, 0, absPos.Y + absSize.Y + 2)
-            self.Container.Size = UDim2.new(0, absSize.X, 0, 0)
             self.Container.Visible = true
-            
-            local targetSize = UDim2.new(0, absSize.X, 0, math.min(#self.Options * 28, 140))
+            local targetSize = UDim2.new(1, 0, 0, math.min(#self.Options * 28, 140))
             Tween.Play(self.Container, {Size = targetSize}, 0.2)
         else
-            local targetSize = UDim2.new(0, self.Container.Size.X.Offset, 0, 0)
+            local targetSize = UDim2.new(1, 0, 0, 0)
             local tween = Tween.Play(self.Container, {Size = targetSize}, 0.2)
             tween.Completed:Connect(function()
                 if not self.Opened then
