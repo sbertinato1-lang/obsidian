@@ -4,7 +4,7 @@
     It automatically fetches all necessary modules from GitHub.
 ]]
 
-local GITHUB_USER = "sbertinato1-lang" -- USER: PLEASE CHANGE THIS TO YOUR GITHUB USERNAME
+local GITHUB_USER = "sbertinato1-lang" -- Set this to your actual username
 local GITHUB_REPO = "Obsidian"
 local BRANCH = "main"
 
@@ -44,34 +44,28 @@ local function github_require(name)
     }
 
     local path = paths[name]
-    if not path then error("Unknown module: " .. name) end
+    if not path then error("[Obsidian] Unknown module: " .. name) end
 
     local success, content = pcall(function()
         return game:HttpGet(BASE_URL .. path)
     end)
 
     if not success or not content then
-        error("Failed to fetch module from GitHub: " .. name .. " at " .. BASE_URL .. path)
+        error("[Obsidian] Failed to fetch: " .. name .. " from " .. BASE_URL .. path)
     end
 
-    -- Transformation logic to make standard requires work with this loader
-    content = content:gsub('require%(script%.Parent%.Parent%.Theme%)', 'github_require("Theme")')
-    content = content:gsub('require%(script%.Parent%.Parent%.Utils%.Cleanup%)', 'github_require("Utils/Cleanup")')
-    content = content:gsub('require%(script%.Parent%.Parent%.Utils%.Instance%)', 'github_require("Utils/Instance")')
-    content = content:gsub('require%(script%.Parent%.Parent%.Services%.Tween%)', 'github_require("Services/Tween")')
-    content = content:gsub('require%(script%.Parent%.Parent%.Core%.Component%)', 'github_require("Core/Component")')
-    content = content:gsub('require%(script%.Parent%.Parent%.Systems%.Notifications%)', 'github_require("Systems/Notifications")')
-    content = content:gsub('require%(script%.Parent%.Parent%.Systems%.Config%)', 'github_require("Systems/Config")')
-    content = content:gsub('require%(script%.Parent%.Parent%.Components%.(.-)%)', 'github_require("Components/%1")')
-    content = content:gsub('require%(script%.Parent%.Theme%)', 'github_require("Theme")')
-    content = content:gsub('require%(script%.Parent%.Utils%.Cleanup%)', 'github_require("Utils/Cleanup")')
-    content = content:gsub('require%(script%.Parent%.Core%.Window%)', 'github_require("Core/Window")')
-    content = content:gsub('require%(script%.Parent%.Library%)', 'github_require("Library")')
+    -- ROBUST REPLACEMENT: This catches require(script.Parent...), require(script.Parent.Parent...), etc.
+    content = content:gsub('require%s*%(%s*script%.Parent%.Parent%.(.-)%)', function(p)
+        return string.format('github_require("%s")', p:gsub('%.', '/'))
+    end)
+    content = content:gsub('require%s*%(%s*script%.Parent%.(.-)%)', function(p)
+        return string.format('github_require("%s")', p:gsub('%.', '/'))
+    end)
 
     local func, err = loadstring(content)
-    if not func then error("Failed to compile " .. name .. ": " .. err) end
+    if not func then error("[Obsidian] Syntax error in " .. name .. ": " .. err) end
     
-    -- Set the environment so the module can call github_require
+    -- Inject loader into the module's environment
     local env = getfenv(func)
     env.github_require = github_require
     setfenv(func, env)
@@ -81,5 +75,5 @@ local function github_require(name)
     return result
 end
 
--- Start by loading the Library module
+-- Start by loading the Library
 return github_require("Library")
