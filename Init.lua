@@ -210,14 +210,14 @@ Theme.Default = {
 	FontDescription  = Enum.Font.Gotham,
 	
 	-- Text Sizes
-	TextSizeWindow       = 14,
-	TextSizeCategory     = 13,
-	TextSizeTab          = 13,
+	TextSizeWindow       = 16,
+	TextSizeCategory     = 14,
+	TextSizeTab          = 12,
 	TextSizeTitle        = 13,
 	TextSizeDescription  = 12,
 	
 	-- Geometry & Spacing
-	CornerRadius     = 6,
+	CornerRadius     = 8,
 	BorderThickness  = 1,
 	
 	Padding          = 12,
@@ -225,8 +225,8 @@ Theme.Default = {
 	ElementSpacing   = 6,
 	
 	-- Component Dimensions
-	WindowSize       = UDim2.new(0, 650, 0, 400),
-	HeaderHeight     = 36,
+	WindowSize       = UDim2.new(0, 500, 0, 450),
+	HeaderHeight     = 40,
 	SidebarWidth     = 160,
 	ComponentHeight  = 32,
 	
@@ -1385,6 +1385,7 @@ function Window.new(options)
         Position = UDim2.new(0.5, -Theme.Get("WindowSize").X.Offset/2, 0.5, -Theme.Get("WindowSize").Y.Offset/2),
         BackgroundColor3 = Theme.Get("Background"),
         BorderSizePixel = 0,
+        ClipsDescendants = true,
         Parent = self.ScreenGui
     })
     InstanceUtils.ApplyCorner(self.Main, Theme.Get("CornerRadius"))
@@ -1398,7 +1399,6 @@ function Window.new(options)
         BorderSizePixel = 0,
         Parent = self.Main
     })
-    InstanceUtils.ApplyCorner(self.Header, Theme.Get("CornerRadius")) -- Corner mask will be tricky, maybe just use a flat frame top
     
     -- Title & Info
     self.Title = InstanceUtils.Create("TextLabel", {
@@ -1408,7 +1408,7 @@ function Window.new(options)
         TextSize = Theme.Get("TextSizeWindow"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
-        Position = UDim2.new(0, 12, 0, 0),
+        Position = UDim2.new(0, 16, 0, 0),
         Size = UDim2.new(0, 0, 1, 0),
         AutomaticSize = Enum.AutomaticSize.X,
         BackgroundTransparency = 1,
@@ -1451,11 +1451,11 @@ function Window.new(options)
     local function createControl(name, text, color, callback)
         local btn = InstanceUtils.Create("TextButton", {
             Name = name,
-            Size = UDim2.new(0, 30, 0, 30),
-            Position = UDim2.new(1, -35 * (#self.Controls:GetChildren() + 1), 0.5, -15),
+            Size = UDim2.new(0, 36, 0, 36),
+            Position = UDim2.new(1, -40 * (#self.Controls:GetChildren() + 1), 0.5, -18),
             Text = text,
             Font = Enum.Font.Gotham,
-            TextSize = 16,
+            TextSize = 20,
             TextColor3 = color or Theme.Get("SecondaryText"),
             BackgroundTransparency = 1,
             Parent = self.Controls
@@ -1539,21 +1539,69 @@ end
 function Window:CreateCategory(name)
     local category = {
         Name = name,
+        Expanded = true,
+        Tabs = {},
         _cleanup = Cleanup.new()
     }
+
+    category.Button = InstanceUtils.Create("TextButton", {
+        Name = name,
+        Size = UDim2.new(1, -10, 0, 28),
+        Position = UDim2.new(0, 5, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "",
+        Parent = self.SidebarContent
+    })
 
     category.Label = InstanceUtils.Create("TextLabel", {
         Text = name:upper(),
         Font = Theme.Get("FontCategory"),
         TextSize = Theme.Get("TextSizeCategory"),
-        TextColor3 = Theme.Get("SecondaryText"),
+        TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
-        Size = UDim2.new(1, -10, 0, 24),
-        Position = UDim2.new(0, 10, 0, 0),
+        Size = UDim2.new(1, -20, 1, 0),
+        Position = UDim2.new(0, 5, 0, 0),
         BackgroundTransparency = 1,
-        Parent = self.SidebarContent
+        Parent = category.Button
     })
 
+    category.Icon = InstanceUtils.Create("TextLabel", {
+        Text = "▼",
+        Font = Enum.Font.Gotham,
+        TextSize = 10,
+        TextColor3 = Theme.Get("SecondaryText"),
+        TextXAlignment = Enum.TextXAlignment.Right,
+        Size = UDim2.new(1, -10, 1, 0),
+        BackgroundTransparency = 1,
+        Parent = category.Button
+    })
+
+    local function toggle()
+        category.Expanded = not category.Expanded
+        category.Icon.Text = category.Expanded and "▼" or "►"
+        for _, tab in pairs(category.Tabs) do
+            tab.Button.Visible = category.Expanded
+        end
+    end
+
+    category.Button.MouseButton1Click:Connect(toggle)
+
+    function category:CreateTab(tabName, icon)
+        local tab = self._window:CreateTab(tabName, icon)
+        tab.Button.Parent = self._window.SidebarContent
+        tab.Button.LayoutOrder = category.Button.LayoutOrder + #category.Tabs + 1
+        
+        -- Adjust tab button style for sub-item look
+        tab.Button.Size = UDim2.new(1, -20, 0, 28)
+        tab.Button.Position = UDim2.new(0, 15, 0, 0)
+        tab.Button.TextSize = Theme.Get("TextSizeTab")
+        tab.Button.TextColor3 = Theme.Get("SecondaryText")
+        
+        table.insert(category.Tabs, tab)
+        return tab
+    end
+    
+    category._window = self
     return category
 end
 
