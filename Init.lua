@@ -676,11 +676,13 @@ function Config:ListConfigs()
     if listfiles and isfolder(self.Folder) then
         local files = listfiles(self.Folder)
         local configs = {}
-        for _, file in pairs(files) do
-            -- Get just the filename
-            local name = file:match("([^/\\]+)$")
-            if name:match("%.json$") then
-                table.insert(configs, name:gsub("%.json$", ""))
+        if type(files) == "table" then
+            for _, file in pairs(files) do
+                -- Get just the filename
+                local name = tostring(file):match("([^/\\]+)$")
+                if name and name:match("%.json$") then
+                    table.insert(configs, name:gsub("%.json$", ""))
+                end
             end
         end
         return configs
@@ -1209,24 +1211,34 @@ function Dropdown.new(section, options)
         Parent = self.Scroll
     })
 
+    self.SetOptions = function(self, options)
+        self.Options = options
+        updateOptions()
+    end
+
     local function updateOptions()
         for _, child in pairs(self.Scroll:GetChildren()) do
             if child:IsA("TextButton") then child:Destroy() end
         end
 
         for _, opt in pairs(self.Options) do
+            local isSelected = (opt == self.Value)
             local btn = InstanceUtils.Create("TextButton", {
                 Text = tostring(opt),
                 Font = Theme.Get("FontDescription"),
                 TextSize = Theme.Get("TextSizeDescription"),
-                TextColor3 = opt == self.Value and Theme.Get("Text") or Theme.Get("SecondaryText"),
-                BackgroundColor3 = Theme.Get("Surface"),
-                BackgroundTransparency = 1,
+                TextColor3 = isSelected and Theme.Get("Accent") or Theme.Get("SecondaryText"),
+                BackgroundColor3 = isSelected and Theme.Get("Surface") or Theme.Get("Surface"),
+                BackgroundTransparency = isSelected and 0.2 or 1,
                 Size = UDim2.new(1, 0, 0, 28),
                 AutoButtonColor = false,
                 ZIndex = 10002, -- Higher than Scroll
                 Parent = self.Scroll
             })
+            
+            if isSelected then
+                InstanceUtils.ApplyStroke(btn, Theme.Get("Accent"), 1)
+            end
 
             btn.MouseEnter:Connect(function()
                 Tween.Play(btn, {BackgroundTransparency = 0.5})
@@ -1412,6 +1424,11 @@ function MultiDropdown.new(section, options)
         self.ValueLabel.Text = count > 0 and (count .. " selected") or "None"
     end
 
+    self.SetOptions = function(self, options)
+        self.Options = options
+        updateOptions()
+    end
+
     local function updateOptions()
         for _, child in pairs(self.Scroll:GetChildren()) do
             if child:IsA("TextButton") then child:Destroy() end
@@ -1423,14 +1440,18 @@ function MultiDropdown.new(section, options)
                 Text = tostring(opt),
                 Font = Theme.Get("FontDescription"),
                 TextSize = Theme.Get("TextSizeDescription"),
-                TextColor3 = isSelected and Theme.Get("Text") or Theme.Get("SecondaryText"),
-                BackgroundColor3 = Theme.Get("Surface"),
-                BackgroundTransparency = 1,
+                TextColor3 = isSelected and Theme.Get("Accent") or Theme.Get("SecondaryText"),
+                BackgroundColor3 = isSelected and Theme.Get("Surface") or Theme.Get("Surface"),
+                BackgroundTransparency = isSelected and 0.2 or 1,
                 Size = UDim2.new(1, 0, 0, 28),
                 AutoButtonColor = false,
                 ZIndex = 10002, -- Higher than Scroll
                 Parent = self.Scroll
             })
+            
+            if isSelected then
+                InstanceUtils.ApplyStroke(btn, Theme.Get("Accent"), 1)
+            end
 
             btn.MouseEnter:Connect(function()
                 Tween.Play(btn, {BackgroundTransparency = 0.5})
@@ -2151,18 +2172,14 @@ function Window:CreateCategory(name, icon)
 
     local function toggle()
         category.Expanded = not category.Expanded
-        Tween.Play(category.Arrow, {Rotation = category.Expanded and 0 or -90})
+        Tween.Play(category.Arrow, {Rotation = category.Expanded and 0 or -90}, 0.1)
         
         if category.Expanded then
             category.TabHolder.Visible = true
-            Tween.Play(category.TabHolder, {GroupTransparency = 0}, 0.2)
+            category.TabHolder.GroupTransparency = 0
         else
-            local tween = Tween.Play(category.TabHolder, {GroupTransparency = 1}, 0.2)
-            tween.Completed:Connect(function()
-                if not category.Expanded then
-                    category.TabHolder.Visible = false
-                end
-            end)
+            category.TabHolder.GroupTransparency = 1
+            category.TabHolder.Visible = false
         end
     end
 
@@ -2567,7 +2584,7 @@ function Library:CreateConfigUI(tab, folder)
     section:AddButton({
         Name = "Save Config",
         Callback = function()
-            local name = input.Value ~= "" and input.Value or selectedConfig
+            local name = input.Input.Text ~= "" and input.Input.Text or selectedConfig
             config:SetFile(name)
             
             local data = self:GetSettings()
