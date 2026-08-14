@@ -733,6 +733,7 @@ function Label.new(section, options)
         RichText = true,
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
+        ZIndex = 50,
         Parent = self.Instance
     })
 
@@ -778,6 +779,7 @@ function Paragraph.new(section, options)
         Size = UDim2.new(1, 0, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
         BackgroundTransparency = 1,
+        ZIndex = 50,
         Parent = self.Instance
     })
 
@@ -846,6 +848,7 @@ function Button.new(section, options)
         Position = UDim2.new(0, iconLabel and 30 or 10, 0, 0),
         TextXAlignment = iconLabel and Enum.TextXAlignment.Left or Enum.TextXAlignment.Center,
         BackgroundTransparency = 1,
+        ZIndex = 50, -- Explicit ZIndex
         Parent = self.Button
     })
 
@@ -913,6 +916,7 @@ function Toggle.new(section, options)
         Size = UDim2.new(1, -30, 1, 0),
         Position = UDim2.new(0, 10, 0, 0),
         BackgroundTransparency = 1,
+        ZIndex = 50, -- Explicit ZIndex
         Parent = self.Instance
     })
 
@@ -1007,6 +1011,7 @@ function Slider.new(section, options)
         RichText = true,
         Size = UDim2.new(1, -50, 0, 20),
         BackgroundTransparency = 1,
+        ZIndex = 50,
         Parent = self.Instance
     })
 
@@ -1020,6 +1025,7 @@ function Slider.new(section, options)
         Size = UDim2.new(0, 50, 0, 20),
         Position = UDim2.new(1, -50, 0, 0),
         BackgroundTransparency = 1,
+        ZIndex = 50,
         Parent = self.Instance
     })
 
@@ -1176,14 +1182,14 @@ function Dropdown.new(section, options)
 
     self.Container = InstanceUtils.Create("Frame", {
         Name = "Container",
-        Size = UDim2.new(1, 0, 0, 0),
-        Position = UDim2.new(0, 0, 1, 2),
+        Size = UDim2.new(0, 0, 0, 0), -- Size will be updated on open
+        Position = UDim2.new(0, 0, 0, 0), -- Position will be updated on open
         BackgroundColor3 = Theme.Get("Secondary"),
         BorderSizePixel = 0,
         Visible = false,
         ClipsDescendants = true,
-        ZIndex = 100,
-        Parent = self.Instance -- Parented to Instance instead of Button
+        ZIndex = 10000, -- Extremely high ZIndex for popups
+        Parent = section.Window.ScreenGui -- Parent to ScreenGui to avoid clipping
     })
     InstanceUtils.ApplyCorner(self.Container, 4)
     InstanceUtils.ApplyStroke(self.Container, Theme.Get("Border"), 1)
@@ -1195,7 +1201,7 @@ function Dropdown.new(section, options)
         ScrollBarImageColor3 = Theme.Get("Border"),
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        ZIndex = 101, -- Higher than Container
+        ZIndex = 10001, -- Higher than Container
         Parent = self.Container
     })
     InstanceUtils.Create("UIListLayout", {
@@ -1218,7 +1224,7 @@ function Dropdown.new(section, options)
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 0, 28),
                 AutoButtonColor = false,
-                ZIndex = 102, -- Higher than Scroll
+                ZIndex = 10002, -- Higher than Scroll
                 Parent = self.Scroll
             })
 
@@ -1246,11 +1252,27 @@ function Dropdown.new(section, options)
         Tween.Play(self.Icon, {Rotation = state and 180 or 0})
         
         if state then
+            -- Calculate absolute position
+            local absPos = self.Button.AbsolutePosition
+            local absSize = self.Button.AbsoluteSize
+            
+            -- Fallback if AbsolutePosition is 0,0 (wait for render)
+            local attempts = 0
+            while absPos.X == 0 and absPos.Y == 0 and attempts < 5 do
+                task.wait()
+                absPos = self.Button.AbsolutePosition
+                absSize = self.Button.AbsoluteSize
+                attempts = attempts + 1
+            end
+            
+            self.Container.Position = UDim2.new(0, absPos.X, 0, absPos.Y + absSize.Y + 2)
+            self.Container.Size = UDim2.new(0, absSize.X, 0, 0)
             self.Container.Visible = true
-            local targetSize = UDim2.new(1, 0, 0, math.min(#self.Options * 28, 140))
+            
+            local targetSize = UDim2.new(0, absSize.X, 0, math.min(#self.Options * 28, 140))
             Tween.Play(self.Container, {Size = targetSize}, 0.2)
         else
-            local targetSize = UDim2.new(1, 0, 0, 0)
+            local targetSize = UDim2.new(0, self.Container.Size.X.Offset, 0, 0)
             local tween = Tween.Play(self.Container, {Size = targetSize}, 0.2)
             tween.Completed:Connect(function()
                 if not self.Opened then
@@ -1357,14 +1379,14 @@ function MultiDropdown.new(section, options)
 
     self.Container = InstanceUtils.Create("Frame", {
         Name = "Container",
-        Size = UDim2.new(1, 0, 0, 0),
-        Position = UDim2.new(0, 0, 1, 2),
+        Size = UDim2.new(0, 0, 0, 0), -- Size will be updated on open
+        Position = UDim2.new(0, 0, 0, 0), -- Position will be updated on open
         BackgroundColor3 = Theme.Get("Secondary"),
         BorderSizePixel = 0,
         Visible = false,
         ClipsDescendants = true,
-        ZIndex = 100,
-        Parent = self.Instance -- Parented to Instance instead of Button
+        ZIndex = 10000, -- Extremely high ZIndex for popups
+        Parent = section.Window.ScreenGui -- Parent to ScreenGui to avoid clipping
     })
     InstanceUtils.ApplyCorner(self.Container, 4)
     InstanceUtils.ApplyStroke(self.Container, Theme.Get("Border"), 1)
@@ -1376,7 +1398,7 @@ function MultiDropdown.new(section, options)
         ScrollBarImageColor3 = Theme.Get("Border"),
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        ZIndex = 101, -- Higher than Container
+        ZIndex = 10001, -- Higher than Container
         Parent = self.Container
     })
     InstanceUtils.Create("UIListLayout", {
@@ -1406,7 +1428,7 @@ function MultiDropdown.new(section, options)
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 0, 28),
                 AutoButtonColor = false,
-                ZIndex = 102, -- Higher than Scroll
+                ZIndex = 10002, -- Higher than Scroll
                 Parent = self.Scroll
             })
 
@@ -1436,11 +1458,27 @@ function MultiDropdown.new(section, options)
         Tween.Play(self.Icon, {Rotation = state and 180 or 0})
         
         if state then
+            -- Calculate absolute position
+            local absPos = self.Button.AbsolutePosition
+            local absSize = self.Button.AbsoluteSize
+            
+            -- Fallback if AbsolutePosition is 0,0 (wait for render)
+            local attempts = 0
+            while absPos.X == 0 and absPos.Y == 0 and attempts < 5 do
+                task.wait()
+                absPos = self.Button.AbsolutePosition
+                absSize = self.Button.AbsoluteSize
+                attempts = attempts + 1
+            end
+            
+            self.Container.Position = UDim2.new(0, absPos.X, 0, absPos.Y + absSize.Y + 2)
+            self.Container.Size = UDim2.new(0, absSize.X, 0, 0)
             self.Container.Visible = true
-            local targetSize = UDim2.new(1, 0, 0, math.min(#self.Options * 28, 140))
+            
+            local targetSize = UDim2.new(0, absSize.X, 0, math.min(#self.Options * 28, 140))
             Tween.Play(self.Container, {Size = targetSize}, 0.2)
         else
-            local targetSize = UDim2.new(1, 0, 0, 0)
+            local targetSize = UDim2.new(0, self.Container.Size.X.Offset, 0, 0)
             local tween = Tween.Play(self.Container, {Size = targetSize}, 0.2)
             tween.Completed:Connect(function()
                 if not self.Opened then
@@ -1496,6 +1534,7 @@ function Textbox.new(section, options)
         RichText = true,
         Size = UDim2.new(0.5, 0, 1, 0),
         BackgroundTransparency = 1,
+        ZIndex = 50,
         Parent = self.Instance
     })
 
@@ -1576,6 +1615,7 @@ function Keybind.new(section, options)
         RichText = true,
         Size = UDim2.new(1, -60, 1, 0),
         BackgroundTransparency = 1,
+        ZIndex = 50,
         Parent = self.Instance
     })
 
@@ -1765,11 +1805,13 @@ function ColorPicker.new(section, options)
         if state then
             -- Position relative to button
             local absPos = self.Button.AbsolutePosition
-            -- Fallback if AbsolutePosition is 0,0 (though unlikely on click)
-            if absPos.X == 0 and absPos.Y == 0 then
-                -- Try to wait a frame
+            
+            -- Fallback if AbsolutePosition is 0,0 (wait for render)
+            local attempts = 0
+            while absPos.X == 0 and absPos.Y == 0 and attempts < 5 do
                 task.wait()
                 absPos = self.Button.AbsolutePosition
+                attempts = attempts + 1
             end
             
             self.PickerFrame.Position = UDim2.new(0, absPos.X - 155, 0, absPos.Y)
@@ -1844,7 +1886,8 @@ function Window.new(options)
         _currentTab = nil,
         _dragging = false,
         _dragStart = nil,
-        _startPos = nil
+        _startPos = nil,
+        Library = options.Library
     }, Window)
 
     -- Root GUI
@@ -1892,6 +1935,7 @@ function Window.new(options)
         Size = UDim2.new(0, 0, 1, 0),
         AutomaticSize = Enum.AutomaticSize.X,
         BackgroundTransparency = 1,
+        ZIndex = 50,
         Parent = self.Header
     })
 
@@ -2073,6 +2117,7 @@ function Window:CreateCategory(name, icon)
         Size = UDim2.new(1, iconLabel and -50 or -30, 1, 0),
         Position = UDim2.new(0, iconLabel and 35 or 15, 0, 0),
         BackgroundTransparency = 1,
+        ZIndex = 50,
         Parent = category.Button
     })
 
@@ -2183,6 +2228,7 @@ function Window:CreateTab(name, icon)
         Size = UDim2.new(1, iconLabel and -35 or -10, 1, 0),
         Position = UDim2.new(0, iconLabel and 32 or 10, 0, 0),
         BackgroundTransparency = 1,
+        ZIndex = 50,
         Parent = tab.Button
     })
 
@@ -2232,6 +2278,7 @@ function Window:CreateTab(name, icon)
             Title = title,
             Components = {},
             Window = self.Window,
+            Library = self.Window.Library,
             _cleanup = Cleanup.new()
         }
 
@@ -2275,74 +2322,87 @@ function Window:CreateTab(name, icon)
             Position = UDim2.new(0, 10, 0, 0),
             Size = UDim2.new(1, -10, 0, 30),
             BackgroundTransparency = 1,
+            ZIndex = 50,
             Parent = section.Frame
         })
 
-        function section:AddLabel(options)
-            local component = _require("Components/Label").new(self, options)
-            table.insert(self.Components, component)
+        local function register(component, options)
+            if options and (options.Flag or options.Name) then
+                local id = options.Flag or options.Name
+                if section.Library then
+                    section.Library.Components[id] = component
+                end
+            end
+            table.insert(section.Components, component)
             return component
         end
+
+        function section:AddLabel(options)
+            local component = _require("Components/Label").new(self, options)
+            return register(component, options)
+        end
+        section.CreateLabel = section.AddLabel
 
         function section:AddButton(options)
             local component = _require("Components/Button").new(self, options)
-            table.insert(self.Components, component)
-            return component
+            return register(component, options)
         end
+        section.CreateButton = section.AddButton
 
         function section:AddToggle(options)
             local component = _require("Components/Toggle").new(self, options)
-            table.insert(self.Components, component)
-            return component
+            return register(component, options)
         end
+        section.CreateToggle = section.AddToggle
 
         function section:AddSlider(options)
             local component = _require("Components/Slider").new(self, options)
-            table.insert(self.Components, component)
-            return component
+            return register(component, options)
         end
+        section.CreateSlider = section.AddSlider
 
         function section:AddDropdown(options)
             local component = _require("Components/Dropdown").new(self, options)
-            table.insert(self.Components, component)
-            return component
+            return register(component, options)
         end
+        section.CreateDropdown = section.AddDropdown
 
         function section:AddMultiDropdown(options)
             local component = _require("Components/MultiDropdown").new(self, options)
-            table.insert(self.Components, component)
-            return component
+            return register(component, options)
         end
+        section.CreateMultiDropdown = section.AddMultiDropdown
 
         function section:AddTextbox(options)
             local component = _require("Components/Textbox").new(self, options)
-            table.insert(self.Components, component)
-            return component
+            return register(component, options)
         end
+        section.CreateTextbox = section.AddTextbox
 
         function section:AddKeybind(options)
             local component = _require("Components/Keybind").new(self, options)
-            table.insert(self.Components, component)
-            return component
+            return register(component, options)
         end
+        section.CreateKeybind = section.AddKeybind
 
         function section:AddColorPicker(options)
             local component = _require("Components/ColorPicker").new(self, options)
-            table.insert(self.Components, component)
-            return component
+            return register(component, options)
         end
+        section.CreateColorPicker = section.AddColorPicker
 
         function section:AddSeparator()
             local component = _require("Components/Separator").new(self)
             table.insert(self.Components, component)
             return component
         end
+        section.CreateSeparator = section.AddSeparator
 
         function section:AddParagraph(options)
             local component = _require("Components/Paragraph").new(self, options)
-            table.insert(self.Components, component)
-            return component
+            return register(component, options)
         end
+        section.CreateParagraph = section.AddParagraph
         
         return section
     end
@@ -2443,6 +2503,7 @@ function Library:CreateWindow(options)
 	options.Title = options.Title or "Obsidian"
 	options.Badge = options.Badge or ""
 	options.Version = options.Version or ""
+	options.Library = self
 	
 	local window = Window.new(options)
 	self._cleanup:Add(window)
@@ -2485,7 +2546,7 @@ function Library:CreateConfigUI(tab, folder)
     local configList = config:ListConfigs()
     local selectedConfig = configList[1] or "default"
     
-    local dropdown = section:CreateDropdown({
+    local dropdown = section:AddDropdown({
         Name = "Select Config",
         Options = configList,
         Default = selectedConfig,
@@ -2495,7 +2556,7 @@ function Library:CreateConfigUI(tab, folder)
         end
     })
     
-    local input = section:CreateInput({
+    local input = section:AddTextbox({
         Name = "New Config Name",
         Placeholder = "Enter name...",
         Callback = function(val)
@@ -2503,33 +2564,25 @@ function Library:CreateConfigUI(tab, folder)
         end
     })
     
-    section:CreateButton({
+    section:AddButton({
         Name = "Save Config",
         Callback = function()
             local name = input.Value ~= "" and input.Value or selectedConfig
             config:SetFile(name)
             
-            -- Gather all settings from windows
-            local data = {}
-            -- (Implementation would need a way to gather all component values)
-            -- For now, we'll assume the user manages their own data or we add a helper
-            if self.GetSettings then
-                data = self:GetSettings()
-            end
-            
+            local data = self:GetSettings()
             config:Save(data)
             self:Notify({Title = "Config", Content = "Saved " .. name, Type = "Success"})
             
-            -- Refresh dropdown
             dropdown:SetOptions(config:ListConfigs())
         end
     })
     
-    section:CreateButton({
+    section:AddButton({
         Name = "Load Config",
         Callback = function()
             local data = config:Load()
-            if data and self.LoadSettings then
+            if data then
                 self:LoadSettings(data)
                 self:Notify({Title = "Config", Content = "Loaded " .. selectedConfig, Type = "Success"})
             else
@@ -2538,7 +2591,7 @@ function Library:CreateConfigUI(tab, folder)
         end
     })
 
-    section:CreateButton({
+    section:AddButton({
         Name = "Refresh List",
         Callback = function()
             dropdown:SetOptions(config:ListConfigs())
