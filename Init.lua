@@ -2026,7 +2026,7 @@ function Window:CreateCategory(name, icon)
         Parent = category.Button
     })
 
-    category.TabHolder = InstanceUtils.Create("Frame", {
+    category.TabHolder = InstanceUtils.Create("CanvasGroup", {
         Name = "Tabs",
         Size = UDim2.new(1, 0, 0, 0),
         BackgroundTransparency = 1,
@@ -2127,27 +2127,34 @@ function Window:CreateTab(name, icon)
     })
 
     -- Tab Page in Container
-    tab.Page = InstanceUtils.Create("ScrollingFrame", {
+    tab.Page = InstanceUtils.Create("CanvasGroup", {
         Name = name .. "_Page",
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         Visible = false,
+        Parent = self.Container
+    })
+
+    tab.ScrollFrame = InstanceUtils.Create("ScrollingFrame", {
+        Name = "Scroll",
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
         ScrollBarThickness = 2,
         ScrollBarImageColor3 = Theme.Get("Border"),
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        Parent = self.Container
+        Parent = tab.Page
     })
     InstanceUtils.Create("UIListLayout", {
         Padding = UDim.new(0, Theme.Get("SectionSpacing")),
         HorizontalAlignment = Enum.HorizontalAlignment.Center,
         SortOrder = Enum.SortOrder.LayoutOrder,
-        Parent = tab.Page
+        Parent = tab.ScrollFrame
     })
     InstanceUtils.Create("UIPadding", {
         PaddingTop = UDim.new(0, 10),
         PaddingBottom = UDim.new(0, 10),
-        Parent = tab.Page
+        Parent = tab.ScrollFrame
     })
 
     tab.Button.MouseButton1Click:Connect(function()
@@ -2172,7 +2179,7 @@ function Window:CreateTab(name, icon)
             BackgroundColor3 = Theme.Get("Secondary"),
             BorderSizePixel = 0,
             AutomaticSize = Enum.AutomaticSize.Y,
-            Parent = tab.Page
+            Parent = tab.ScrollFrame
         })
         InstanceUtils.ApplyCorner(section.Frame, Theme.Get("CornerRadius"))
         InstanceUtils.ApplyStroke(section.Frame, Theme.Get("Border"), 1)
