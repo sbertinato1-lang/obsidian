@@ -154,6 +154,7 @@ end
 
 _modules["Utils/Icons"] = function()
 return { 
+     ["wheat"] = "rbxassetid://85261952080359",
 	 ["accessibility"] = "rbxassetid://114029945302017", 
 	 ["activity"] = "rbxassetid://94212016861936", 
 	 ["app-window"] = "rbxassetid://93142176757189", 
