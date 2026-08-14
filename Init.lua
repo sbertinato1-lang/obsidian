@@ -1141,7 +1141,7 @@ _modules["Components/Dropdown"] = function()
             Size = UDim2.new(1, 0, 0, Theme.Get("ComponentHeight")),
             AutoButtonColor = false,
             ClipsDescendants = false,
-            ZIndex = 40,
+            ZIndex = 50,
             Parent = self.Instance
         })
 
@@ -1522,14 +1522,13 @@ _modules["Components/MultiDropdown"] = function()
 
         -- Main component
         self.Instance = InstanceUtils.Create("Frame", {
-            Name = "MultiDropdown",
-            Size = UDim2.new(0.95, 0, 0, Theme.Get("ComponentHeight")),
-            BackgroundTransparency = 1,
-            ClipsDescendants = false,
-            ZIndex = 5,
-            AutomaticSize = Enum.AutomaticSize.Y,
-            Parent = section.Content
-        })
+		    Name = "MultiDropdown",
+		    Size = UDim2.new(0.95, 0, 0, Theme.Get("ComponentHeight")),
+		    BackgroundTransparency = 1,
+		    ClipsDescendants = false,
+		    ZIndex = 5,
+		    Parent = section.Content
+		})
 
         -- Main button
         self.Button = InstanceUtils.Create("TextButton", {
@@ -1868,60 +1867,80 @@ _modules["Components/MultiDropdown"] = function()
         ----------------------------------------------------------------
 
         self.Toggle = function(self, state)
-            self.Opened = state
-
-            Tween.Play(self.Icon, {
-                Rotation = state and 180 or 0
-            })
-
-            if state then
-                self.Container.Visible = true
-
-                -- Search box = 38px
-                -- Options = 28px each
-                -- Maximum = 178px
-
-                local targetSize = UDim2.new(
-                    1,
-                    0,
-                    0,
-                    math.min(
-                        #self.Options * 28 + 38,
-                        178
-                    )
-                )
-
-                Tween.Play(
-                    self.Container,
-                    {
-                        Size = targetSize
-                    },
-                    0.2
-                )
-
-            else
-                local targetSize = UDim2.new(
-                    1,
-                    0,
-                    0,
-                    0
-                )
-
-                local tween = Tween.Play(
-                    self.Container,
-                    {
-                        Size = targetSize
-                    },
-                    0.2
-                )
-
-                tween.Completed:Connect(function()
-                    if not self.Opened then
-                        self.Container.Visible = false
-                    end
-                end)
-            end
-        end
+		    self.Opened = state
+		
+		    Tween.Play(self.Icon, {
+		        Rotation = state and 180 or 0
+		    }, 0.2)
+		
+		    if state then
+		        self.Container.Visible = true
+		
+		        -- Count filtered options
+		        local query = string.lower(self.SearchQuery)
+		        local visibleCount = 0
+		
+		        for _, opt in pairs(self.Options) do
+		            local text = tostring(opt)
+		
+		            if query == ""
+		                or string.find(
+		                    string.lower(text),
+		                    query,
+		                    1,
+		                    true
+		                ) then
+		
+		                visibleCount = visibleCount + 1
+		            end
+		        end
+		
+		        local targetHeight = math.min(
+		            visibleCount * 28 + 38,
+		            178
+		        )
+		
+		        -- At least enough room for the search box
+		        if targetHeight < 38 then
+		            targetHeight = 38
+		        end
+		
+		        Tween.Play(
+		            self.Container,
+		            {
+		                Size = UDim2.new(
+		                    1,
+		                    0,
+		                    0,
+		                    targetHeight
+		                )
+		            },
+		            0.2
+		        )
+		
+		    else
+		        -- Close animation
+		        Tween.Play(
+		            self.Container,
+		            {
+		                Size = UDim2.new(
+		                    1,
+		                    0,
+		                    0,
+		                    0
+		                )
+		            },
+		            0.2
+		        )
+		
+		        -- Hide after animation
+		        task.delay(0.2, function()
+		            if not self.Opened then
+		                self.Container.Visible = false
+		            end
+		        end)
+		    end
+		end
 
         ----------------------------------------------------------------
         -- BUTTON INPUT
