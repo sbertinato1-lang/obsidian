@@ -1312,8 +1312,15 @@ function MultiDropdown.new(section, options)
     setmetatable(self, MultiDropdown)
 
     self.Options = options.Options or {}
-    self.Value = options.Default or {}
+    self.Value = {}
     self.Opened = false
+
+    -- Normalize Default table to key-value pairs for quick lookup
+    if options.Default and type(options.Default) == "table" then
+        for _, v in pairs(options.Default) do
+            self.Value[v] = true
+        end
+    end
 
     self.Instance = InstanceUtils.Create("Frame", {
         Name = "MultiDropdown",
