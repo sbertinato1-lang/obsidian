@@ -433,14 +433,14 @@ Theme.Default = {
 	FontDescription  = Enum.Font.SourceSans,
 	
 	-- Text Sizes
-	TextSizeWindow       = 16,
-	TextSizeCategory     = 14,
-	TextSizeTab          = 12,
-	TextSizeTitle        = 13,
+	TextSizeWindow       = 20,
+	TextSizeCategory     = 16,
+	TextSizeTab          = 14,
+	TextSizeTitle        = 15,
 	TextSizeDescription  = 12,
 	
 	-- Geometry & Spacing
-	CornerRadius     = 0,
+	CornerRadius     = 2,
 	BorderThickness  = 1,
 	
 	Padding          = 14,
@@ -448,13 +448,13 @@ Theme.Default = {
 	ElementSpacing   = 8,
 	
 	-- Component Dimensions
-	WindowSize       = UDim2.new(0, 500, 0, 500),
+	WindowSize       = UDim2.new(0, 700, 0, 600),
 	HeaderHeight     = 42,
 	SidebarWidth     = 170,
 	ComponentHeight  = 32,
 	
 	-- Animations
-	AnimDuration     = 0.15,
+	AnimDuration     = 0.25,
 }
 
 Theme.Current = Theme.Default
