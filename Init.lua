@@ -1,4 +1,4 @@
--- Obsidian UI Library Bundled | Version 2.5.0
+-- Obsidian UI Library Bundled | Version 2.7.0
 local _modules = {}
 local function _require(name)
     name = tostring(name):gsub("script%.Parent%.Parent%.", ""):gsub("script%.Parent%.", ""):gsub("%.", "/")
@@ -425,11 +425,11 @@ Theme.Default = {
 	Accent           = Color3.fromRGB(220, 220, 225),
 	
 	-- Typography
-	FontWindow       = Enum.Font.GothamMedium,
-	FontCategory     = Enum.Font.GothamSemibold,
-	FontTab          = Enum.Font.GothamMedium,
-	FontTitle        = Enum.Font.GothamMedium,
-	FontDescription  = Enum.Font.Gotham,
+	FontWindow       = Enum.Font.SourceSansSemibold,
+	FontCategory     = Enum.Font.SourceSansSemibold,
+	FontTab          = Enum.Font.SourceSansSemibold,
+	FontTitle        = Enum.Font.SourceSansSemibold,
+	FontDescription  = Enum.Font.SourceSans,
 	
 	-- Text Sizes
 	TextSizeWindow       = 16,
@@ -1128,7 +1128,8 @@ function Dropdown.new(section, options)
         BackgroundColor3 = Theme.Get("Surface"),
         Size = UDim2.new(1, 0, 1, 0),
         AutoButtonColor = false,
-        ZIndex = 6,
+        ClipsDescendants = false,
+        ZIndex = 40,
         Parent = self.Instance
     })
     InstanceUtils.ApplyCorner(self.Button, 4)
@@ -1144,7 +1145,7 @@ function Dropdown.new(section, options)
         Position = UDim2.new(0, 10, 0, 0),
         Size = UDim2.new(0.5, -10, 1, 0),
         BackgroundTransparency = 1,
-        ZIndex = 20, -- Higher ZIndex
+        ZIndex = 50, -- Higher ZIndex
         Parent = self.Button
     })
 
@@ -1158,7 +1159,7 @@ function Dropdown.new(section, options)
         Position = UDim2.new(0.5, 0, 0, 0),
         Size = UDim2.new(0.5, -30, 1, 0),
         BackgroundTransparency = 1,
-        ZIndex = 20, -- Higher ZIndex
+        ZIndex = 50, -- Higher ZIndex
         Parent = self.Button
     })
 
@@ -1194,6 +1195,7 @@ function Dropdown.new(section, options)
         ScrollBarImageColor3 = Theme.Get("Border"),
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ZIndex = 101, -- Higher than Container
         Parent = self.Container
     })
     InstanceUtils.Create("UIListLayout", {
@@ -1216,6 +1218,7 @@ function Dropdown.new(section, options)
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 0, 28),
                 AutoButtonColor = false,
+                ZIndex = 102, -- Higher than Scroll
                 Parent = self.Scroll
             })
 
@@ -1306,7 +1309,8 @@ function MultiDropdown.new(section, options)
         BackgroundColor3 = Theme.Get("Surface"),
         Size = UDim2.new(1, 0, 1, 0),
         AutoButtonColor = false,
-        ZIndex = 6,
+        ClipsDescendants = false,
+        ZIndex = 40,
         Parent = self.Instance
     })
     InstanceUtils.ApplyCorner(self.Button, 4)
@@ -1322,7 +1326,7 @@ function MultiDropdown.new(section, options)
         Position = UDim2.new(0, 10, 0, 0),
         Size = UDim2.new(0.5, -10, 1, 0),
         BackgroundTransparency = 1,
-        ZIndex = 20,
+        ZIndex = 50,
         Parent = self.Button
     })
 
@@ -1336,7 +1340,7 @@ function MultiDropdown.new(section, options)
         Position = UDim2.new(0.5, 0, 0, 0),
         Size = UDim2.new(0.5, -30, 1, 0),
         BackgroundTransparency = 1,
-        ZIndex = 20,
+        ZIndex = 50,
         Parent = self.Button
     })
 
@@ -1372,6 +1376,7 @@ function MultiDropdown.new(section, options)
         ScrollBarImageColor3 = Theme.Get("Border"),
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ZIndex = 101, -- Higher than Container
         Parent = self.Container
     })
     InstanceUtils.Create("UIListLayout", {
@@ -1401,6 +1406,7 @@ function MultiDropdown.new(section, options)
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 0, 28),
                 AutoButtonColor = false,
+                ZIndex = 102, -- Higher than Scroll
                 Parent = self.Scroll
             })
 
@@ -1712,6 +1718,7 @@ function ColorPicker.new(section, options)
         Size = UDim2.new(1, -10, 1, -10),
         Position = UDim2.new(0, 5, 0, 5),
         BackgroundTransparency = 1,
+        ZIndex = 1001, -- Higher than PickerFrame
         Parent = self.PickerFrame
     })
     InstanceUtils.Create("UIGridLayout", {
@@ -1732,6 +1739,7 @@ function ColorPicker.new(section, options)
             Text = "",
             BackgroundColor3 = color,
             BorderSizePixel = 0,
+            ZIndex = 1002, -- Higher than grid
             Parent = grid
         })
         InstanceUtils.ApplyCorner(colorBtn, 2)
