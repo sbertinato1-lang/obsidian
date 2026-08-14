@@ -1,4 +1,4 @@
--- Obsidian UI Library Bundled | Version 2.2.0
+-- Obsidian UI Library Bundled | Version 2.3.0
 local _modules = {}
 local function _require(name)
     name = tostring(name):gsub("script%.Parent%.Parent%.", ""):gsub("script%.Parent%.", ""):gsub("%.", "/")
@@ -672,6 +672,35 @@ function Config:Load()
     return nil
 end
 
+function Config:ListConfigs()
+    if listfiles and isfolder(self.Folder) then
+        local files = listfiles(self.Folder)
+        local configs = {}
+        for _, file in pairs(files) do
+            -- Get just the filename
+            local name = file:match("([^/\\]+)$")
+            if name:match("%.json$") then
+                table.insert(configs, name:gsub("%.json$", ""))
+            end
+        end
+        return configs
+    end
+    return {"default"}
+end
+
+function Config:SetFile(name)
+    self.File = name .. ".json"
+end
+
+function Config:Delete(name)
+    local path = self.Folder .. "/" .. name .. ".json"
+    if delfile and isfile(path) then
+        delfile(path)
+        return true
+    end
+    return false
+end
+
 return Config
 
 end
@@ -1111,11 +1140,11 @@ function Dropdown.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
-        RichText = true,
+        RichText = false, -- Disabled for compatibility
         Position = UDim2.new(0, 10, 0, 0),
         Size = UDim2.new(0.5, -10, 1, 0),
         BackgroundTransparency = 1,
-        ZIndex = 7,
+        ZIndex = 8, -- Higher ZIndex
         Parent = self.Button
     })
 
@@ -1125,11 +1154,11 @@ function Dropdown.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("SecondaryText"),
         TextXAlignment = Enum.TextXAlignment.Right,
-        RichText = true,
+        RichText = false, -- Disabled for compatibility
         Position = UDim2.new(0.5, 0, 0, 0),
         Size = UDim2.new(0.5, -30, 1, 0),
         BackgroundTransparency = 1,
-        ZIndex = 7,
+        ZIndex = 8, -- Higher ZIndex
         Parent = self.Button
     })
 
@@ -1153,7 +1182,7 @@ function Dropdown.new(section, options)
         Visible = false,
         ClipsDescendants = true,
         ZIndex = 100,
-        Parent = self.Button
+        Parent = self.Instance -- Parented to Instance instead of Button
     })
     InstanceUtils.ApplyCorner(self.Container, 4)
     InstanceUtils.ApplyStroke(self.Container, Theme.Get("Border"), 1)
@@ -1665,9 +1694,26 @@ function ColorPicker.new(section, options)
         BorderSizePixel = 0,
         ClipsDescendants = true,
         Visible = false,
-        ZIndex = 1000,
-        Parent = self.Instance.Parent.Parent.Parent.Parent.Parent -- ScreenGui
+        ZIndex = 1000
     })
+
+    -- Use a robust way to find the ScreenGui
+    local function findScreenGui()
+        local current = self.Instance
+        while current and not current:IsA("ScreenGui") do
+            current = current.Parent
+        end
+        return current
+    end
+
+    task.spawn(function()
+        local sg = findScreenGui()
+        while not sg do
+            task.wait(0.1)
+            sg = findScreenGui()
+        end
+        self.PickerFrame.Parent = sg
+    end)
     InstanceUtils.ApplyCorner(self.PickerFrame, 4)
     InstanceUtils.ApplyStroke(self.PickerFrame, Theme.Get("Border"), 1)
 
@@ -2053,7 +2099,7 @@ function Window:CreateCategory(name, icon)
         Parent = category.TabHolder
     })
     InstanceUtils.Create("UIPadding", {
-        PaddingLeft = UDim.new(0, 40), -- Increased indentation for sub-tabs
+        PaddingLeft = UDim.new(0, 25), -- Adjusted indentation for sub-tabs
         Parent = category.TabHolder
     })
 
@@ -2373,8 +2419,10 @@ function Library.new()
 	local self = setmetatable({
 		_cleanup = Cleanup.new(),
 		Windows = {},
+		Components = {}, -- Component registry for configs
 		ToggleKey = Enum.KeyCode.RightControl,
-		Visible = true
+		Visible = true,
+		_settings = {}
 	}, Library)
 
 	-- Global Visibility Toggle
@@ -2427,6 +2475,93 @@ function Library:Destroy()
 end
 
 -- Create a singleton instance for global access if needed, or return the class
+function Library:CreateConfigUI(tab, folder)
+    local config = self:CreateConfig({Folder = folder})
+    local section = tab:CreateSection("Configuration")
+    
+    local configList = config:ListConfigs()
+    local selectedConfig = configList[1] or "default"
+    
+    local dropdown = section:CreateDropdown({
+        Name = "Select Config",
+        Options = configList,
+        Default = selectedConfig,
+        Callback = function(val)
+            selectedConfig = val
+            config:SetFile(val)
+        end
+    })
+    
+    local input = section:CreateInput({
+        Name = "New Config Name",
+        Placeholder = "Enter name...",
+        Callback = function(val)
+            -- Just stores the name for saving
+        end
+    })
+    
+    section:CreateButton({
+        Name = "Save Config",
+        Callback = function()
+            local name = input.Value ~= "" and input.Value or selectedConfig
+            config:SetFile(name)
+            
+            -- Gather all settings from windows
+            local data = {}
+            -- (Implementation would need a way to gather all component values)
+            -- For now, we'll assume the user manages their own data or we add a helper
+            if self.GetSettings then
+                data = self:GetSettings()
+            end
+            
+            config:Save(data)
+            self:Notify({Title = "Config", Content = "Saved " .. name, Type = "Success"})
+            
+            -- Refresh dropdown
+            dropdown:SetOptions(config:ListConfigs())
+        end
+    })
+    
+    section:CreateButton({
+        Name = "Load Config",
+        Callback = function()
+            local data = config:Load()
+            if data and self.LoadSettings then
+                self:LoadSettings(data)
+                self:Notify({Title = "Config", Content = "Loaded " .. selectedConfig, Type = "Success"})
+            else
+                self:Notify({Title = "Config", Content = "Failed to load " .. selectedConfig, Type = "Error"})
+            end
+        end
+    })
+
+    section:CreateButton({
+        Name = "Refresh List",
+        Callback = function()
+            dropdown:SetOptions(config:ListConfigs())
+        end
+    })
+    
+    return config
+end
+
+function Library:GetSettings()
+    local settings = {}
+    for flag, component in pairs(self.Components) do
+        settings[flag] = component:GetValue()
+    end
+    return settings
+end
+
+function Library:LoadSettings(data)
+    for flag, value in pairs(data) do
+        local component = self.Components[flag]
+        if component then
+            component:SetValue(value)
+        end
+    end
+end
+
 return Library.new()
 
 end
