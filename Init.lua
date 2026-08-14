@@ -1537,28 +1537,32 @@ function Textbox.new(section, options)
     })
 
     self.InputContainer = InstanceUtils.Create("Frame", {
-        Name = "InputContainer",
-        Size = UDim2.new(0.5, -5, 0, 24),
-        Position = UDim2.new(0.5, 5, 0.5, -12),
-        BackgroundColor3 = Theme.Get("Surface"),
-        Parent = self.Instance
-    })
+	    Name = "InputContainer",
+	    Size = UDim2.new(0.5, -5, 0, 24),
+	    Position = UDim2.new(0.5, 5, 0.5, -12),
+	    BackgroundColor3 = Theme.Get("Surface"),
+	    ClipsDescendants = true,
+	    Parent = self.Instance
+	})
+		
     InstanceUtils.ApplyCorner(self.InputContainer, 4)
     InstanceUtils.ApplyStroke(self.InputContainer, Theme.Get("Border"), 1)
 
     self.Input = InstanceUtils.Create("TextBox", {
-        Text = options.Default or "",
-        PlaceholderText = options.Placeholder or "Type here...",
-        Font = Theme.Get("FontDescription"),
-        TextSize = Theme.Get("TextSizeDescription"),
-        TextColor3 = Theme.Get("Text"),
-        PlaceholderColor3 = Theme.Get("SecondaryText"),
-        Size = UDim2.new(1, -10, 1, 0),
-        Position = UDim2.new(0, 5, 0, 0),
-        BackgroundTransparency = 1,
-        ClearTextOnFocus = options.ClearOnFocus or false,
-        Parent = self.InputContainer
-    })
+	    Text = options.Default or "",
+	    PlaceholderText = options.Placeholder or "Type here...",
+	    Font = Theme.Get("FontDescription"),
+	    TextSize = Theme.Get("TextSizeDescription"),
+	    TextColor3 = Theme.Get("Text"),
+	    PlaceholderColor3 = Theme.Get("SecondaryText"),
+	    Size = UDim2.new(1, -10, 1, 0),
+	    Position = UDim2.new(0, 5, 0, 0),
+	    BackgroundTransparency = 1,
+	    ClearTextOnFocus = options.ClearOnFocus or false,
+	    TextXAlignment = Enum.TextXAlignment.Left,
+	    TextYAlignment = Enum.TextYAlignment.Center,
+	    Parent = self.InputContainer
+	})
 
     self.Input.Focused:Connect(function()
         Tween.Play(self.InputContainer, {BackgroundColor3 = Theme.Get("Secondary")})
