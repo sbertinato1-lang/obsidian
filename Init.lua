@@ -1205,7 +1205,8 @@ function Dropdown.new(section, options)
             local targetSize = UDim2.new(1, 0, 0, math.min(#self.Options * 28, 140))
             Tween.Play(self.Container, {Size = targetSize}, 0.2)
         else
-            Tween.Play(self.Container, {Size = UDim2.new(1, 0, 0, 0)}, 0.2).Completed:Connect(function()
+            local tween = Tween.Play(self.Container, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
+            tween.Completed:Connect(function()
                 if not self.Opened then
                     self.Container.Visible = false
                 end
@@ -1387,7 +1388,8 @@ function MultiDropdown.new(section, options)
             local targetSize = UDim2.new(1, 0, 0, math.min(#self.Options * 28, 140))
             Tween.Play(self.Container, {Size = targetSize}, 0.2)
         else
-            Tween.Play(self.Container, {Size = UDim2.new(1, 0, 0, 0)}, 0.2).Completed:Connect(function()
+            local tween = Tween.Play(self.Container, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
+            tween.Completed:Connect(function()
                 if not self.Opened then
                     self.Container.Visible = false
                 end
@@ -2046,7 +2048,8 @@ function Window:CreateCategory(name, icon)
             category.TabHolder.Visible = true
             Tween.Play(category.TabHolder, {GroupTransparency = 0}, 0.2)
         else
-            Tween.Play(category.TabHolder, {GroupTransparency = 1}, 0.2).Completed:Connect(function()
+            local tween = Tween.Play(category.TabHolder, {GroupTransparency = 1}, 0.2)
+            tween.Completed:Connect(function()
                 if not category.Expanded then
                     category.TabHolder.Visible = false
                 end
