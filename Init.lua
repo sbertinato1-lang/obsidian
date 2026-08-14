@@ -29,7 +29,7 @@ end
 
 function Cleanup:Add(task)
 	if not task then return end
-	table.insert(self._tasks, task)
+	self._tasks[#self._tasks + 1] = task
 	return task
 end
 
@@ -681,8 +681,8 @@ function Config:ListConfigs()
                 -- Get just the filename
                 local name = tostring(file):match("([^/\\]+)$")
                 if name and name:match("%.json$") then
-                    table.insert(configs, name:gsub("%.json$", ""))
-                end
+                     configs[#configs + 1] = name:gsub("%.json$", "")
+                 end
             end
         end
         return configs
@@ -2195,7 +2195,7 @@ function Window:CreateCategory(name, icon)
         tab.Button.TextSize = Theme.Get("TextSizeTab")
         tab.Button.TextColor3 = Theme.Get("SecondaryText")
         
-        table.insert(category.Tabs, tab)
+        category.Tabs[#category.Tabs + 1] = tab
         return tab
     end
     
@@ -2284,7 +2284,7 @@ function Window:CreateTab(name, icon)
         self:SelectTab(tab)
     end)
 
-    table.insert(self._tabs, tab)
+    self._tabs[#self._tabs + 1] = tab
     if not self._currentTab then
         self:SelectTab(tab)
     end
@@ -2350,7 +2350,7 @@ function Window:CreateTab(name, icon)
                     section.Library.Components[id] = component
                 end
             end
-            table.insert(section.Components, component)
+            section.Components[#section.Components + 1] = component
             return component
         end
 
@@ -2410,7 +2410,7 @@ function Window:CreateTab(name, icon)
 
         function section:AddSeparator()
             local component = _require("Components/Separator").new(self)
-            table.insert(self.Components, component)
+            self.Components[#self.Components + 1] = component
             return component
         end
         section.CreateSeparator = section.AddSeparator
@@ -2524,7 +2524,7 @@ function Library:CreateWindow(options)
 	
 	local window = Window.new(options)
 	self._cleanup:Add(window)
-	table.insert(self.Windows, window)
+	self.Windows[#self.Windows + 1] = window
 	return window
 end
 
