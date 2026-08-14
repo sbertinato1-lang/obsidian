@@ -1351,13 +1351,10 @@ _modules["Components/Dropdown"] = function()
 end
 
 _modules["Components/MultiDropdown"] = function()
-    local UserInputService = game:GetService("UserInputService")
-
     local Component = _require("Core/Component")
     local Theme = _require("Theme")
     local InstanceUtils = _require("Utils/Instance")
     local Tween = _require("Services/Tween")
-
     local Icons = _require("Utils/Icons")
 
     local MultiDropdown = setmetatable({}, Component)
@@ -1372,24 +1369,22 @@ _modules["Components/MultiDropdown"] = function()
         self.Opened = false
         self.SearchQuery = ""
 
-        -- Normalize Default table to key-value pairs
         if options.Default and type(options.Default) == "table" then
             for _, v in pairs(options.Default) do
                 self.Value[v] = true
             end
         end
 
-        -- Main component
         self.Instance = InstanceUtils.Create("Frame", {
-		    Name = "MultiDropdown",
-		    Size = UDim2.new(0.95, 0, 0, Theme.Get("ComponentHeight")),
-		    BackgroundTransparency = 1,
-		    ClipsDescendants = false,
-		    ZIndex = 5,
-		    Parent = section.Content
-		})
+            Name = "MultiDropdown",
+            Size = UDim2.new(0.95, 0, 0, Theme.Get("ComponentHeight")),
+            BackgroundTransparency = 1,
+            ClipsDescendants = false,
+            ZIndex = 5,
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Parent = section.Content
+        })
 
-        -- Main button
         self.Button = InstanceUtils.Create("TextButton", {
             Text = "",
             BackgroundColor3 = Theme.Get("Surface"),
@@ -1399,45 +1394,35 @@ _modules["Components/MultiDropdown"] = function()
             ZIndex = 40,
             Parent = self.Instance
         })
-
         InstanceUtils.ApplyCorner(self.Button, 4)
-        InstanceUtils.ApplyStroke(
-            self.Button,
-            Theme.Get("Border"),
-            1
-        )
+        InstanceUtils.ApplyStroke(self.Button, Theme.Get("Border"), 1)
 
-        -- Title
         self.TitleLabel = InstanceUtils.Create("TextLabel", {
             Text = options.Name or "Multi Dropdown",
             Font = Theme.Get("FontDescription"),
             TextSize = Theme.Get("TextSizeDescription"),
             TextColor3 = Theme.Get("Text"),
             TextXAlignment = Enum.TextXAlignment.Left,
-            RichText = false,
             Position = UDim2.new(0, 10, 0, 0),
             Size = UDim2.new(0.5, -10, 1, 0),
             BackgroundTransparency = 1,
-            ZIndex = 50,
+            ZIndex = 51,
             Parent = self.Button
         })
 
-        -- Selected count
         self.ValueLabel = InstanceUtils.Create("TextLabel", {
             Text = "None",
             Font = Theme.Get("FontDescription"),
             TextSize = Theme.Get("TextSizeDescription"),
             TextColor3 = Theme.Get("SecondaryText"),
             TextXAlignment = Enum.TextXAlignment.Right,
-            RichText = false,
             Position = UDim2.new(0.5, 0, 0, 0),
             Size = UDim2.new(0.5, -30, 1, 0),
             BackgroundTransparency = 1,
-            ZIndex = 50,
+            ZIndex = 51,
             Parent = self.Button
         })
 
-        -- Chevron
         self.Icon = InstanceUtils.Create("ImageLabel", {
             Name = "Icon",
             Image = Icons["chevron-down"],
@@ -1445,20 +1430,14 @@ _modules["Components/MultiDropdown"] = function()
             Size = UDim2.new(0, 14, 0, 14),
             Position = UDim2.new(1, -25, 0.5, -7),
             BackgroundTransparency = 1,
-            ZIndex = 50,
+            ZIndex = 51,
             Parent = self.Button
         })
 
-        -- Dropdown container
         self.Container = InstanceUtils.Create("Frame", {
             Name = "Container",
             Size = UDim2.new(1, 0, 0, 0),
-            Position = UDim2.new(
-                0,
-                0,
-                0,
-                Theme.Get("ComponentHeight") + 2
-            ),
+            Position = UDim2.new(0, 0, 0, Theme.Get("ComponentHeight") + 2),
             BackgroundColor3 = Theme.Get("Secondary"),
             BorderSizePixel = 0,
             Visible = false,
@@ -1466,110 +1445,56 @@ _modules["Components/MultiDropdown"] = function()
             ZIndex = 45,
             Parent = self.Instance
         })
-
-        InstanceUtils.ApplyCorner(
-            self.Container,
-            4
-        )
-
-        InstanceUtils.ApplyStroke(
-            self.Container,
-            Theme.Get("Border"),
-            1
-        )
-
-        ----------------------------------------------------------------
-        -- SEARCH BOX
-        ----------------------------------------------------------------
+        InstanceUtils.ApplyCorner(self.Container, 4)
+        InstanceUtils.ApplyStroke(self.Container, Theme.Get("Border"), 1)
 
         self.SearchBox = InstanceUtils.Create("TextBox", {
             Name = "SearchBox",
-
             Text = "",
             PlaceholderText = "Search...",
-
             Font = Theme.Get("FontDescription"),
             TextSize = Theme.Get("TextSizeDescription"),
-
             TextColor3 = Theme.Get("Text"),
             PlaceholderColor3 = Theme.Get("SecondaryText"),
-
             Size = UDim2.new(1, -10, 0, 28),
             Position = UDim2.new(0, 5, 0, 5),
-
             BackgroundColor3 = Theme.Get("Surface"),
             BackgroundTransparency = 0,
-
             ClearTextOnFocus = false,
-
             TextXAlignment = Enum.TextXAlignment.Center,
             TextYAlignment = Enum.TextYAlignment.Center,
-
             ZIndex = 50,
             Parent = self.Container
         })
-
-        InstanceUtils.ApplyCorner(
-            self.SearchBox,
-            4
-        )
-
-        InstanceUtils.ApplyStroke(
-            self.SearchBox,
-            Theme.Get("Border"),
-            1
-        )
-
-        ----------------------------------------------------------------
-        -- SCROLLING OPTIONS
-        ----------------------------------------------------------------
+        InstanceUtils.ApplyCorner(self.SearchBox, 4)
+        InstanceUtils.ApplyStroke(self.SearchBox, Theme.Get("Border"), 1)
 
         self.Scroll = InstanceUtils.Create("ScrollingFrame", {
             Name = "Scroll",
-
             Size = UDim2.new(1, -10, 1, -38),
             Position = UDim2.new(0, 5, 0, 38),
-
             BackgroundTransparency = 1,
-
             ScrollBarThickness = 2,
             ScrollBarImageColor3 = Theme.Get("Border"),
-
             CanvasSize = UDim2.new(0, 0, 0, 0),
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
-
             ZIndex = 46,
             Parent = self.Container
         })
-
         InstanceUtils.Create("UIListLayout", {
             SortOrder = Enum.SortOrder.LayoutOrder,
             Parent = self.Scroll
         })
 
-        ----------------------------------------------------------------
-        -- VALUE LABEL
-        ----------------------------------------------------------------
-
         local function updateValueLabel()
             local count = 0
-
             for _ in pairs(self.Value) do
                 count = count + 1
             end
-
-            self.ValueLabel.Text =
-                count > 0
-                and (count .. " selected")
-                or "None"
+            self.ValueLabel.Text = count > 0 and (count .. " selected") or "None"
         end
 
-        ----------------------------------------------------------------
-        -- OPTIONS
-        ----------------------------------------------------------------
-
         local function updateOptions()
-            -- Remove old buttons
             for _, child in pairs(self.Scroll:GetChildren()) do
                 if child:IsA("TextButton") then
                     child:Destroy()
@@ -1577,251 +1502,131 @@ _modules["Components/MultiDropdown"] = function()
             end
 
             local query = string.lower(self.SearchQuery)
+            local visibleCount = 0
 
             for _, opt in pairs(self.Options) do
                 local text = tostring(opt)
-
-                -- Search filtering
-                local matchesSearch =
-                    query == ""
-                    or string.find(
-                        string.lower(text),
-                        query,
-                        1,
-                        true
-                    )
+                local matchesSearch = query == "" or string.find(string.lower(text), query, 1, true)
 
                 if matchesSearch then
-                    local isSelected = self.Value[opt]
+                    visibleCount = visibleCount + 1
+                    local isSelected = self.Value[opt] == true
 
                     local btn = InstanceUtils.Create("TextButton", {
                         Text = text,
-
                         Font = Theme.Get("FontDescription"),
                         TextSize = Theme.Get("TextSizeDescription"),
-
-                        TextColor3 =
-                            isSelected
-                            and Theme.Get("Text")
-                            or Theme.Get("SecondaryText"),
-
-                        BackgroundColor3 =
-                            isSelected
-                            and Theme.Get("Accent")
-                            or Theme.Get("Surface"),
-
-                        BackgroundTransparency =
-                            isSelected
-                            and 0.4
-                            or 1,
-
+                        TextColor3 = isSelected and Theme.Get("Text") or Theme.Get("SecondaryText"),
+                        BackgroundColor3 = isSelected and Theme.Get("Accent") or Theme.Get("Surface"),
+                        BackgroundTransparency = isSelected and 0.4 or 1,
                         Size = UDim2.new(1, 0, 0, 28),
-
                         AutoButtonColor = false,
-
                         ZIndex = 47,
                         Parent = self.Scroll
                     })
 
-                    ----------------------------------------------------------------
-                    -- HOVER
-                    ----------------------------------------------------------------
-
                     btn.MouseEnter:Connect(function()
-                        Tween.Play(btn, {
-                            BackgroundTransparency =
-                                isSelected
-                                and 0.3
-                                or 0.8
-                        })
+                        Tween.Play(btn, { BackgroundTransparency = isSelected and 0.3 or 0.8 })
                     end)
-
                     btn.MouseLeave:Connect(function()
-                        Tween.Play(btn, {
-                            BackgroundTransparency =
-                                isSelected
-                                and 0.4
-                                or 1
-                        })
+                        Tween.Play(btn, { BackgroundTransparency = isSelected and 0.4 or 1 })
                     end)
-
-                    ----------------------------------------------------------------
-                    -- SELECT
-                    ----------------------------------------------------------------
 
                     btn.MouseButton1Click:Connect(function()
-                        self.Value[opt] = not self.Value[opt]
-
-                        if not self.Value[opt] then
+                        if self.Value[opt] then
                             self.Value[opt] = nil
+                        else
+                            self.Value[opt] = true
                         end
-
                         updateValueLabel()
                         updateOptions()
-
                         if options.Callback then
                             options.Callback(self.Value)
                         end
                     end)
                 end
             end
-        end
 
-        ----------------------------------------------------------------
-        -- SEARCH
-        ----------------------------------------------------------------
+            if self.Opened then
+                local targetHeight = visibleCount == 0 and 38 or math.min(visibleCount * 28 + 38, 178)
+                Tween.Play(self.Container, { Size = UDim2.new(1, 0, 0, targetHeight) }, 0.15)
+            end
+        end
 
         self.SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
             self.SearchQuery = self.SearchBox.Text
-
-            -- Reset scroll when search changes
-            self.Scroll.CanvasPosition =
-                Vector2.new(0, 0)
-
+            self.Scroll.CanvasPosition = Vector2.new(0, 0)
             updateOptions()
         end)
 
-        ----------------------------------------------------------------
-        -- SET OPTIONS
-        ----------------------------------------------------------------
-
         self.SetOptions = function(self, newOptions)
             self.Options = newOptions
-
             updateOptions()
         end
 
-        ----------------------------------------------------------------
-        -- SET VALUE
-        ----------------------------------------------------------------
-
         self.SetValue = function(self, values)
             self.Value = {}
-
             if type(values) == "table" then
-                for _, value in pairs(values) do
-                    self.Value[value] = true
+                for _, v in pairs(values) do
+                    self.Value[v] = true
                 end
             end
-
             updateValueLabel()
             updateOptions()
         end
 
-        ----------------------------------------------------------------
-        -- CLEAR SEARCH
-        ----------------------------------------------------------------
+        self.GetValue = function(self)
+            local result = {}
+            for k in pairs(self.Value) do
+                result[#result + 1] = k
+            end
+            return result
+        end
 
         self.ClearSearch = function(self)
             self.SearchQuery = ""
             self.SearchBox.Text = ""
-            self.Scroll.CanvasPosition =
-                Vector2.new(0, 0)
-
+            self.Scroll.CanvasPosition = Vector2.new(0, 0)
             updateOptions()
         end
 
-        ----------------------------------------------------------------
-        -- TOGGLE
-        ----------------------------------------------------------------
-
         self.Toggle = function(self, state)
-		    self.Opened = state
-		
-		    Tween.Play(self.Icon, {
-		        Rotation = state and 180 or 0
-		    }, 0.2)
-		
-		    if state then
-		        self.Container.Visible = true
-		
-		        -- Count filtered options
-		        local query = string.lower(self.SearchQuery)
-		        local visibleCount = 0
-		
-		        for _, opt in pairs(self.Options) do
-		            local text = tostring(opt)
-		
-		            if query == ""
-		                or string.find(
-		                    string.lower(text),
-		                    query,
-		                    1,
-		                    true
-		                ) then
-		
-		                visibleCount = visibleCount + 1
-		            end
-		        end
-		
-		        local targetHeight = math.min(
-		            visibleCount * 28 + 38,
-		            178
-		        )
-		
-		        -- At least enough room for the search box
-		        if targetHeight < 38 then
-		            targetHeight = 38
-		        end
-		
-		        Tween.Play(
-		            self.Container,
-		            {
-		                Size = UDim2.new(
-		                    1,
-		                    0,
-		                    0,
-		                    targetHeight
-		                )
-		            },
-		            0.2
-		        )
-		
-		    else
-		        -- Close animation
-		        Tween.Play(
-		            self.Container,
-		            {
-		                Size = UDim2.new(
-		                    1,
-		                    0,
-		                    0,
-		                    0
-		                )
-		            },
-		            0.2
-		        )
-		
-		        -- Hide after animation
-		        task.delay(0.2, function()
-		            if not self.Opened then
-		                self.Container.Visible = false
-		            end
-		        end)
-		    end
-		end
+            self.Opened = state
+            Tween.Play(self.Icon, { Rotation = state and 180 or 0 }, 0.2)
 
-        ----------------------------------------------------------------
-        -- BUTTON INPUT
-        ----------------------------------------------------------------
-
-        self.Button.InputBegan:Connect(function(input)
-            if input.UserInputType ==
-                Enum.UserInputType.MouseButton1
-                or input.UserInputType ==
-                Enum.UserInputType.Touch then
-
-                self:Toggle(not self.Opened)
+            if state then
+                self.Container.Visible = true
+                local query = string.lower(self.SearchQuery)
+                local visibleCount = 0
+                for _, opt in pairs(self.Options) do
+                    local text = tostring(opt)
+                    if query == "" or string.find(string.lower(text), query, 1, true) then
+                        visibleCount = visibleCount + 1
+                    end
+                end
+                local targetHeight = visibleCount == 0 and 38 or math.min(visibleCount * 28 + 38, 178)
+                Tween.Play(self.Container, { Size = UDim2.new(1, 0, 0, targetHeight) }, 0.2)
+            else
+                local tween = Tween.Play(self.Container, { Size = UDim2.new(1, 0, 0, 0) }, 0.2)
+                tween.Completed:Connect(function()
+                    if not self.Opened then
+                        task.defer(function()
+                            if not self.Opened then
+                                self.Container.Visible = false
+                            end
+                        end)
+                    end
+                end)
             end
-        end)
+        end
 
-        ----------------------------------------------------------------
-        -- INITIALIZE
-        ----------------------------------------------------------------
+        -- FIX: MouseButton1Click, same fix as Dropdown
+        self.Button.MouseButton1Click:Connect(function()
+            self:Toggle(not self.Opened)
+        end)
 
         updateOptions()
         updateValueLabel()
-
         return self
     end
 
