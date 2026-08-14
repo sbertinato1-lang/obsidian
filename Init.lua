@@ -1,4 +1,4 @@
--- Obsidian UI Library Bundled | Version 2.3.0
+-- Obsidian UI Library Bundled | Version 2.5.0
 local _modules = {}
 local function _require(name)
     name = tostring(name):gsub("script%.Parent%.Parent%.", ""):gsub("script%.Parent%.", ""):gsub("%.", "/")
@@ -1144,7 +1144,7 @@ function Dropdown.new(section, options)
         Position = UDim2.new(0, 10, 0, 0),
         Size = UDim2.new(0.5, -10, 1, 0),
         BackgroundTransparency = 1,
-        ZIndex = 8, -- Higher ZIndex
+        ZIndex = 20, -- Higher ZIndex
         Parent = self.Button
     })
 
@@ -1158,7 +1158,7 @@ function Dropdown.new(section, options)
         Position = UDim2.new(0.5, 0, 0, 0),
         Size = UDim2.new(0.5, -30, 1, 0),
         BackgroundTransparency = 1,
-        ZIndex = 8, -- Higher ZIndex
+        ZIndex = 20, -- Higher ZIndex
         Parent = self.Button
     })
 
@@ -1257,8 +1257,11 @@ function Dropdown.new(section, options)
         end
     end
 
-    self.Button.MouseButton1Click:Connect(function()
-        self:Toggle(not self.Opened)
+    -- Detect clicks reliably
+    self.Button.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            self:Toggle(not self.Opened)
+        end
     end)
 
     updateOptions()
@@ -1315,11 +1318,11 @@ function MultiDropdown.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
-        RichText = true,
+        RichText = false,
         Position = UDim2.new(0, 10, 0, 0),
         Size = UDim2.new(0.5, -10, 1, 0),
         BackgroundTransparency = 1,
-        ZIndex = 7,
+        ZIndex = 20,
         Parent = self.Button
     })
 
@@ -1329,11 +1332,11 @@ function MultiDropdown.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("SecondaryText"),
         TextXAlignment = Enum.TextXAlignment.Right,
-        RichText = true,
+        RichText = false,
         Position = UDim2.new(0.5, 0, 0, 0),
         Size = UDim2.new(0.5, -30, 1, 0),
         BackgroundTransparency = 1,
-        ZIndex = 7,
+        ZIndex = 20,
         Parent = self.Button
     })
 
@@ -1357,7 +1360,7 @@ function MultiDropdown.new(section, options)
         Visible = false,
         ClipsDescendants = true,
         ZIndex = 100,
-        Parent = self.Button
+        Parent = self.Instance -- Parented to Instance instead of Button
     })
     InstanceUtils.ApplyCorner(self.Container, 4)
     InstanceUtils.ApplyStroke(self.Container, Theme.Get("Border"), 1)
@@ -1441,8 +1444,11 @@ function MultiDropdown.new(section, options)
         end
     end
 
-    self.Button.MouseButton1Click:Connect(function()
-        self:Toggle(not self.Opened)
+    -- Detect clicks reliably
+    self.Button.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            self:Toggle(not self.Opened)
+        end
     end)
 
     updateOptions()
@@ -1653,6 +1659,7 @@ function ColorPicker.new(section, options)
         Name = "ColorPicker",
         Size = UDim2.new(0.95, 0, 0, Theme.Get("ComponentHeight")),
         BackgroundTransparency = 1,
+        ClipsDescendants = false, -- Prevent clipping the button or labels
         Parent = section.Content
     })
 
@@ -1675,17 +1682,18 @@ function ColorPicker.new(section, options)
         Size = UDim2.new(0, 40, 0, 20),
         Position = UDim2.new(1, -50, 0.5, -10),
         AutoButtonColor = false,
+        ZIndex = 10, -- Ensure it's clickable
         Parent = self.Instance
     })
     InstanceUtils.ApplyCorner(self.Button, 4)
     InstanceUtils.ApplyStroke(self.Button, Theme.Get("Border"), 1)
 
-    -- Color Picker UI (Parented to ScreenGui to avoid clipping)
-    local window = section._cleanup and section or section.Frame.Parent.Parent.Parent -- Trace back to window
-    -- Wait, section doesn't have a direct ref to Window easily. 
-    -- Let's assume section.Frame.Parent.Parent is the Container, and its Parent is the Main frame.
-    -- Better yet, we can find the ScreenGui.
-    
+    -- Detect clicks reliably
+    self.Button.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            self:Toggle(not self.Opened)
+        end
+    end)
     self.PickerFrame = InstanceUtils.Create("Frame", {
         Name = "Picker",
         Size = UDim2.new(0, 150, 0, 0), -- Animated height
@@ -1694,26 +1702,9 @@ function ColorPicker.new(section, options)
         BorderSizePixel = 0,
         ClipsDescendants = true,
         Visible = false,
-        ZIndex = 1000
+        ZIndex = 1000,
+        Parent = section.Window.ScreenGui
     })
-
-    -- Use a robust way to find the ScreenGui
-    local function findScreenGui()
-        local current = self.Instance
-        while current and not current:IsA("ScreenGui") do
-            current = current.Parent
-        end
-        return current
-    end
-
-    task.spawn(function()
-        local sg = findScreenGui()
-        while not sg do
-            task.wait(0.1)
-            sg = findScreenGui()
-        end
-        self.PickerFrame.Parent = sg
-    end)
     InstanceUtils.ApplyCorner(self.PickerFrame, 4)
     InstanceUtils.ApplyStroke(self.PickerFrame, Theme.Get("Border"), 1)
 
@@ -1766,7 +1757,13 @@ function ColorPicker.new(section, options)
         if state then
             -- Position relative to button
             local absPos = self.Button.AbsolutePosition
-            local absSize = self.Button.AbsoluteSize
+            -- Fallback if AbsolutePosition is 0,0 (though unlikely on click)
+            if absPos.X == 0 and absPos.Y == 0 then
+                -- Try to wait a frame
+                task.wait()
+                absPos = self.Button.AbsolutePosition
+            end
+            
             self.PickerFrame.Position = UDim2.new(0, absPos.X - 155, 0, absPos.Y)
             self.PickerFrame.Visible = true
             Tween.Play(self.PickerFrame, {Size = UDim2.new(0, 150, 0, 120)}, 0.2)
@@ -1780,10 +1777,6 @@ function ColorPicker.new(section, options)
             end)
         end
     end
-
-    self.Button.MouseButton1Click:Connect(function()
-        self:Toggle(not self.Opened)
-    end)
 
     return self
 end
@@ -2225,10 +2218,12 @@ function Window:CreateTab(name, icon)
         self:SelectTab(tab)
     end
 
+    tab.Window = self
     function tab:CreateSection(title)
         local section = {
             Title = title,
             Components = {},
+            Window = self.Window,
             _cleanup = Cleanup.new()
         }
 
