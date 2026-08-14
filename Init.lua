@@ -1,4 +1,4 @@
--- Obsidian UI Library Bundled | Version 2.1.0
+-- Obsidian UI Library Bundled | Version 2.2.0
 local _modules = {}
 local function _require(name)
     name = tostring(name):gsub("script%.Parent%.Parent%.", ""):gsub("script%.Parent%.", ""):gsub("%.", "/")
@@ -76,7 +76,9 @@ function InstanceUtils.Create(className, properties, children)
 	if properties then
 		for k, v in pairs(properties) do
 			if k ~= "Parent" then
-				instance[k] = v
+				pcall(function()
+					instance[k] = v
+				end)
 			end
 		end
 		
@@ -379,7 +381,18 @@ function Tween.Create(instance, properties, duration, easingStyle, easingDirecti
 end
 
 function Tween.Play(instance, properties, duration, easingStyle, easingDirection)
-	local tween = Tween.Create(instance, properties, duration, easingStyle, easingDirection)
+	-- Filter properties that don't exist on the instance to prevent crashes
+	local validProperties = {}
+	for k, v in pairs(properties) do
+		local success = pcall(function()
+			local _ = instance[k]
+		end)
+		if success then
+			validProperties[k] = v
+		end
+	end
+
+	local tween = Tween.Create(instance, validProperties, duration, easingStyle, easingDirection)
 	tween:Play()
 	
 	-- Return tween so it can be managed by Cleanup if needed
@@ -2306,7 +2319,12 @@ function Window:SelectTab(tab)
 
     self._currentTab = tab
     tab.Page.Visible = true
-    tab.Page.GroupTransparency = 1
+    
+    -- Safe property assignment
+    pcall(function()
+        tab.Page.GroupTransparency = 1
+    end)
+    
     Tween.Play(tab.Page, {GroupTransparency = 0}, 0.2)
     
     Tween.Play(tab.Button, {
