@@ -433,11 +433,11 @@ Theme.Default = {
 	FontDescription  = Enum.Font.SourceSans,
 	
 	-- Text Sizes
-	TextSizeWindow       = 20,
-	TextSizeCategory     = 16,
-	TextSizeTab          = 14,
-	TextSizeTitle        = 15,
-	TextSizeDescription  = 12,
+	TextSizeWindow       = 24,
+	TextSizeCategory     = 20,
+	TextSizeTab          = 18,
+	TextSizeTitle        = 20,
+	TextSizeDescription  = 16,
 	
 	-- Geometry & Spacing
 	CornerRadius     = 2,
