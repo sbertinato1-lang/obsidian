@@ -1,4 +1,4 @@
--- Obsidian UI Library Bundled
+-- Obsidian UI Library Bundled | Version 2.1.0
 local _modules = {}
 local function _require(name)
     name = tostring(name):gsub("script%.Parent%.Parent%.", ""):gsub("script%.Parent%.", ""):gsub("%.", "/")
@@ -1196,7 +1196,7 @@ function Dropdown.new(section, options)
         end
     end
 
-    function self:Toggle(state)
+    self.Toggle = function(self, state)
         self.Opened = state
         Tween.Play(self.Icon, {Rotation = state and 180 or 0})
         
@@ -1205,7 +1205,8 @@ function Dropdown.new(section, options)
             local targetSize = UDim2.new(1, 0, 0, math.min(#self.Options * 28, 140))
             Tween.Play(self.Container, {Size = targetSize}, 0.2)
         else
-            local tween = Tween.Play(self.Container, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
+            local targetSize = UDim2.new(1, 0, 0, 0)
+            local tween = Tween.Play(self.Container, {Size = targetSize}, 0.2)
             tween.Completed:Connect(function()
                 if not self.Opened then
                     self.Container.Visible = false
@@ -1379,7 +1380,7 @@ function MultiDropdown.new(section, options)
         end
     end
 
-    function self:Toggle(state)
+    self.Toggle = function(self, state)
         self.Opened = state
         Tween.Play(self.Icon, {Rotation = state and 180 or 0})
         
@@ -1388,7 +1389,8 @@ function MultiDropdown.new(section, options)
             local targetSize = UDim2.new(1, 0, 0, math.min(#self.Options * 28, 140))
             Tween.Play(self.Container, {Size = targetSize}, 0.2)
         else
-            local tween = Tween.Play(self.Container, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
+            local targetSize = UDim2.new(1, 0, 0, 0)
+            local tween = Tween.Play(self.Container, {Size = targetSize}, 0.2)
             tween.Completed:Connect(function()
                 if not self.Opened then
                     self.Container.Visible = false
@@ -1700,7 +1702,7 @@ function ColorPicker.new(section, options)
         end)
     end
 
-    function self:Toggle(state)
+    self.Toggle = function(self, state)
         self.Opened = state
         if state then
             -- Position relative to button
@@ -1710,7 +1712,8 @@ function ColorPicker.new(section, options)
             self.PickerFrame.Visible = true
             Tween.Play(self.PickerFrame, {Size = UDim2.new(0, 150, 0, 120)}, 0.2)
         else
-            local tween = Tween.Play(self.PickerFrame, {Size = UDim2.new(0, 150, 0, 0)}, 0.2)
+            local targetSize = UDim2.new(0, 150, 0, 0)
+            local tween = Tween.Play(self.PickerFrame, {Size = targetSize}, 0.2)
             tween.Completed:Connect(function()
                 if not self.Opened then
                     self.PickerFrame.Visible = false
