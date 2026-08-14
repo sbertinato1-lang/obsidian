@@ -1710,7 +1710,8 @@ function ColorPicker.new(section, options)
             self.PickerFrame.Visible = true
             Tween.Play(self.PickerFrame, {Size = UDim2.new(0, 150, 0, 120)}, 0.2)
         else
-            Tween.Play(self.PickerFrame, {Size = UDim2.new(0, 150, 0, 0)}, 0.2):Completed:Connect(function()
+            local tween = Tween.Play(self.PickerFrame, {Size = UDim2.new(0, 150, 0, 0)}, 0.2)
+            tween.Completed:Connect(function()
                 if not self.Opened then
                     self.PickerFrame.Visible = false
                 end
