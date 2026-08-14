@@ -1223,24 +1223,20 @@ function Dropdown.new(section, options)
                 Text = tostring(opt),
                 Font = Theme.Get("FontDescription"),
                 TextSize = Theme.Get("TextSizeDescription"),
-                TextColor3 = isSelected and Theme.Get("Accent") or Theme.Get("SecondaryText"),
+                TextColor3 = isSelected and Theme.Get("Text") or Theme.Get("SecondaryText"),
                 BackgroundColor3 = isSelected and Theme.Get("Accent") or Theme.Get("Surface"),
-                BackgroundTransparency = isSelected and 0.8 or 1, -- Transparent fill highlight
+                BackgroundTransparency = isSelected and 0.4 or 1, -- More obvious fill highlight
                 Size = UDim2.new(1, 0, 0, 28),
                 AutoButtonColor = false,
                 ZIndex = 47,
                 Parent = self.Scroll
             })
-            
-            if isSelected then
-                -- Removed outline stroke as requested, using transparent fill above
-            end
 
             btn.MouseEnter:Connect(function()
-                Tween.Play(btn, {BackgroundTransparency = isSelected and 0.6 or 0.8})
+                Tween.Play(btn, {BackgroundTransparency = isSelected and 0.3 or 0.8})
             end)
             btn.MouseLeave:Connect(function()
-                Tween.Play(btn, {BackgroundTransparency = isSelected and 0.8 or 1})
+                Tween.Play(btn, {BackgroundTransparency = isSelected and 0.4 or 1})
             end)
 
             btn.MouseButton1Click:Connect(function()
@@ -1257,6 +1253,12 @@ function Dropdown.new(section, options)
 
     self.SetOptions = function(self, options)
         self.Options = options
+        updateOptions()
+    end
+
+    self.SetValue = function(self, value)
+        self.Value = value
+        self.ValueLabel.Text = tostring(value)
         updateOptions()
     end
 
@@ -1429,24 +1431,20 @@ function MultiDropdown.new(section, options)
                 Text = tostring(opt),
                 Font = Theme.Get("FontDescription"),
                 TextSize = Theme.Get("TextSizeDescription"),
-                TextColor3 = isSelected and Theme.Get("Accent") or Theme.Get("SecondaryText"),
+                TextColor3 = isSelected and Theme.Get("Text") or Theme.Get("SecondaryText"),
                 BackgroundColor3 = isSelected and Theme.Get("Accent") or Theme.Get("Surface"),
-                BackgroundTransparency = isSelected and 0.8 or 1, -- Transparent fill highlight
+                BackgroundTransparency = isSelected and 0.4 or 1, -- More obvious fill highlight
                 Size = UDim2.new(1, 0, 0, 28),
                 AutoButtonColor = false,
                 ZIndex = 47,
                 Parent = self.Scroll
             })
-            
-            if isSelected then
-                -- Removed outline stroke as requested, using transparent fill above
-            end
 
             btn.MouseEnter:Connect(function()
-                Tween.Play(btn, {BackgroundTransparency = isSelected and 0.6 or 0.8})
+                Tween.Play(btn, {BackgroundTransparency = isSelected and 0.3 or 0.8})
             end)
             btn.MouseLeave:Connect(function()
-                Tween.Play(btn, {BackgroundTransparency = isSelected and 0.8 or 1})
+                Tween.Play(btn, {BackgroundTransparency = isSelected and 0.4 or 1})
             end)
 
             btn.MouseButton1Click:Connect(function()
@@ -2563,13 +2561,17 @@ function Library:CreateConfigUI(tab, folder)
         Name = "Save Config",
         Callback = function()
             local name = input.Input.Text ~= "" and input.Input.Text or selectedConfig
+            if name == "" then name = "default" end
+            
             config:SetFile(name)
             
             local data = self:GetSettings()
             config:Save(data)
             self:Notify({Title = "Config", Content = "Saved " .. name, Type = "Success"})
             
-            dropdown:SetOptions(config:ListConfigs())
+            local newList = config:ListConfigs()
+            dropdown:SetOptions(newList)
+            dropdown:SetValue(name)
         end
     })
     
