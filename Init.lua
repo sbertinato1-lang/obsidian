@@ -96,6 +96,7 @@ function InstanceUtils.Create(className, properties, children)
 end
 
 function InstanceUtils.ApplyCorner(instance, radius)
+	if not radius or radius <= 0 then return nil end
 	return InstanceUtils.Create("UICorner", {
 		CornerRadius = UDim.new(0, radius),
 		Parent = instance
@@ -217,17 +218,17 @@ Theme.Default = {
 	TextSizeDescription  = 12,
 	
 	-- Geometry & Spacing
-	CornerRadius     = 8,
+	CornerRadius     = 0,
 	BorderThickness  = 1,
 	
-	Padding          = 12,
-	SectionSpacing   = 8,
-	ElementSpacing   = 6,
+	Padding          = 14,
+	SectionSpacing   = 10,
+	ElementSpacing   = 8,
 	
 	-- Component Dimensions
-	WindowSize       = UDim2.new(0, 500, 0, 450),
-	HeaderHeight     = 40,
-	SidebarWidth     = 160,
+	WindowSize       = UDim2.new(0, 500, 0, 500),
+	HeaderHeight     = 42,
+	SidebarWidth     = 170,
 	ComponentHeight  = 32,
 	
 	-- Animations
@@ -479,6 +480,7 @@ function Label.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
+        RichText = true,
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         Parent = self.Instance
@@ -522,6 +524,7 @@ function Paragraph.new(section, options)
         TextColor3 = Theme.Get("SecondaryText"),
         TextXAlignment = Enum.TextXAlignment.Left,
         TextWrapped = true,
+        RichText = true,
         Size = UDim2.new(1, 0, 0, 0),
         AutomaticSize = Enum.AutomaticSize.Y,
         BackgroundTransparency = 1,
@@ -565,6 +568,7 @@ function Button.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("Text"),
         BackgroundColor3 = Theme.Get("Surface"),
+        RichText = true,
         Size = UDim2.new(1, 0, 1, 0),
         AutoButtonColor = false,
         Parent = self.Instance
@@ -626,6 +630,7 @@ function Toggle.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
+        RichText = true,
         Size = UDim2.new(1, -40, 1, 0),
         BackgroundTransparency = 1,
         Parent = self.Instance
@@ -712,6 +717,7 @@ function Slider.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
+        RichText = true,
         Size = UDim2.new(1, -50, 0, 20),
         BackgroundTransparency = 1,
         Parent = self.Instance
@@ -723,6 +729,7 @@ function Slider.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("SecondaryText"),
         TextXAlignment = Enum.TextXAlignment.Right,
+        RichText = true,
         Size = UDim2.new(0, 50, 0, 20),
         Position = UDim2.new(1, -50, 0, 0),
         BackgroundTransparency = 1,
@@ -832,9 +839,11 @@ function Dropdown.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
+        RichText = true,
         Position = UDim2.new(0, 10, 0, 0),
         Size = UDim2.new(0.5, -10, 1, 0),
         BackgroundTransparency = 1,
+        ZIndex = 5,
         Parent = self.Button
     })
 
@@ -844,9 +853,11 @@ function Dropdown.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("SecondaryText"),
         TextXAlignment = Enum.TextXAlignment.Right,
+        RichText = true,
         Position = UDim2.new(0.5, 0, 0, 0),
         Size = UDim2.new(0.5, -30, 1, 0),
         BackgroundTransparency = 1,
+        ZIndex = 5,
         Parent = self.Button
     })
 
@@ -858,6 +869,7 @@ function Dropdown.new(section, options)
         Position = UDim2.new(1, -25, 0, 0),
         Size = UDim2.new(0, 20, 1, 0),
         BackgroundTransparency = 1,
+        ZIndex = 5,
         Parent = self.Button
     })
 
@@ -868,7 +880,7 @@ function Dropdown.new(section, options)
         BackgroundColor3 = Theme.Get("Secondary"),
         BorderSizePixel = 0,
         Visible = false,
-        ZIndex = 10,
+        ZIndex = 100,
         Parent = self.Button
     })
     InstanceUtils.ApplyCorner(self.Container, 4)
@@ -981,9 +993,11 @@ function MultiDropdown.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
+        RichText = true,
         Position = UDim2.new(0, 10, 0, 0),
         Size = UDim2.new(0.5, -10, 1, 0),
         BackgroundTransparency = 1,
+        ZIndex = 5,
         Parent = self.Button
     })
 
@@ -993,9 +1007,11 @@ function MultiDropdown.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("SecondaryText"),
         TextXAlignment = Enum.TextXAlignment.Right,
+        RichText = true,
         Position = UDim2.new(0.5, 0, 0, 0),
         Size = UDim2.new(0.5, -30, 1, 0),
         BackgroundTransparency = 1,
+        ZIndex = 5,
         Parent = self.Button
     })
 
@@ -1007,6 +1023,7 @@ function MultiDropdown.new(section, options)
         Position = UDim2.new(1, -25, 0, 0),
         Size = UDim2.new(0, 20, 1, 0),
         BackgroundTransparency = 1,
+        ZIndex = 5,
         Parent = self.Button
     })
 
@@ -1017,7 +1034,7 @@ function MultiDropdown.new(section, options)
         BackgroundColor3 = Theme.Get("Secondary"),
         BorderSizePixel = 0,
         Visible = false,
-        ZIndex = 10,
+        ZIndex = 100,
         Parent = self.Button
     })
     InstanceUtils.ApplyCorner(self.Container, 4)
@@ -1120,6 +1137,7 @@ function Textbox.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
+        RichText = true,
         Size = UDim2.new(0.5, 0, 1, 0),
         BackgroundTransparency = 1,
         Parent = self.Instance
@@ -1192,6 +1210,7 @@ function Keybind.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
+        RichText = true,
         Size = UDim2.new(1, -60, 1, 0),
         BackgroundTransparency = 1,
         Parent = self.Instance
@@ -1282,6 +1301,7 @@ function ColorPicker.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
+        RichText = true,
         Size = UDim2.new(1, -40, 1, 0),
         BackgroundTransparency = 1,
         Parent = self.Instance
@@ -1298,16 +1318,59 @@ function ColorPicker.new(section, options)
     InstanceUtils.ApplyCorner(self.Button, 4)
     InstanceUtils.ApplyStroke(self.Button, Theme.Get("Border"), 1)
 
-    -- Simple Color Picker Container (In a real lib, this would have a picker UI)
-    -- For efficiency, I'll just toggle through a few preset colors or a simple popup
-    -- The user said "minimal", so I'll just implement the base structure and a callback
-    
+    -- Color Picker UI
+    self.PickerFrame = InstanceUtils.Create("Frame", {
+        Name = "Picker",
+        Size = UDim2.new(0, 150, 0, 100),
+        Position = UDim2.new(1, 5, 0, 0),
+        BackgroundColor3 = Theme.Get("Secondary"),
+        Visible = false,
+        ZIndex = 50,
+        Parent = self.Button
+    })
+    InstanceUtils.ApplyCorner(self.PickerFrame, 4)
+    InstanceUtils.ApplyStroke(self.PickerFrame, Theme.Get("Border"), 1)
+
+    local grid = InstanceUtils.Create("Frame", {
+        Size = UDim2.new(1, -10, 1, -10),
+        Position = UDim2.new(0, 5, 0, 5),
+        BackgroundTransparency = 1,
+        Parent = self.PickerFrame
+    })
+    InstanceUtils.Create("UIGridLayout", {
+        CellSize = UDim2.new(0, 22, 0, 22),
+        Padding = UDim2.new(0, 4, 0, 4),
+        Parent = grid
+    })
+
+    local colors = {
+        Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 200), Color3.fromRGB(100, 100, 100), Color3.fromRGB(50, 50, 50),
+        Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 255, 0), Color3.fromRGB(0, 0, 255), Color3.fromRGB(255, 255, 0),
+        Color3.fromRGB(255, 0, 255), Color3.fromRGB(0, 255, 255), Color3.fromRGB(255, 128, 0), Color3.fromRGB(128, 0, 255)
+    }
+
+    for _, color in pairs(colors) do
+        local colorBtn = InstanceUtils.Create("TextButton", {
+            Text = "",
+            BackgroundColor3 = color,
+            BorderSizePixel = 0,
+            Parent = grid
+        })
+        InstanceUtils.ApplyCorner(colorBtn, 2)
+        
+        colorBtn.MouseButton1Click:Connect(function()
+            self:SetValue(color)
+            self.PickerFrame.Visible = false
+            self.Opened = false
+            if options.Callback then
+                options.Callback(color)
+            end
+        end)
+    end
+
     self.Button.MouseButton1Click:Connect(function()
-        -- In a full implementation, this would open a color picker GUI
-        -- For now, we just trigger the callback with the current value to show it works
-        if options.Callback then
-            options.Callback(self.Value)
-        end
+        self.Opened = not self.Opened
+        self.PickerFrame.Visible = self.Opened
     end)
 
     return self
@@ -1374,6 +1437,7 @@ function Window.new(options)
         Name = "Obsidian_" .. options.Title,
         ResetOnSpawn = false,
         DisplayOrder = 100,
+        ZIndexBehavior = Enum.ZIndexBehavior.Global,
         Parent = game:GetService("CoreGui")
     })
     self._cleanup:Add(self.ScreenGui)
@@ -1408,7 +1472,8 @@ function Window.new(options)
         TextSize = Theme.Get("TextSizeWindow"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
-        Position = UDim2.new(0, 16, 0, 0),
+        RichText = true,
+        Position = UDim2.new(0, 24, 0, 0),
         Size = UDim2.new(0, 0, 1, 0),
         AutomaticSize = Enum.AutomaticSize.X,
         BackgroundTransparency = 1,
@@ -1544,13 +1609,25 @@ function Window:CreateCategory(name)
         _cleanup = Cleanup.new()
     }
 
+    -- Category Container for proper layout pushing
+    category.Container = InstanceUtils.Create("Frame", {
+        Name = name .. "_Category",
+        Size = UDim2.new(1, 0, 0, 0),
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Parent = self.SidebarContent
+    })
+    InstanceUtils.Create("UIListLayout", {
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = category.Container
+    })
+
     category.Button = InstanceUtils.Create("TextButton", {
-        Name = name,
-        Size = UDim2.new(1, -10, 0, 28),
-        Position = UDim2.new(0, 5, 0, 0),
+        Name = "Header",
+        Size = UDim2.new(1, 0, 0, 30),
         BackgroundTransparency = 1,
         Text = "",
-        Parent = self.SidebarContent
+        Parent = category.Container
     })
 
     category.Label = InstanceUtils.Create("TextLabel", {
@@ -1559,8 +1636,8 @@ function Window:CreateCategory(name)
         TextSize = Theme.Get("TextSizeCategory"),
         TextColor3 = Theme.Get("Text"),
         TextXAlignment = Enum.TextXAlignment.Left,
-        Size = UDim2.new(1, -20, 1, 0),
-        Position = UDim2.new(0, 5, 0, 0),
+        Size = UDim2.new(1, -30, 1, 0),
+        Position = UDim2.new(0, 15, 0, 0),
         BackgroundTransparency = 1,
         Parent = category.Button
     })
@@ -1571,29 +1648,39 @@ function Window:CreateCategory(name)
         TextSize = 10,
         TextColor3 = Theme.Get("SecondaryText"),
         TextXAlignment = Enum.TextXAlignment.Right,
-        Size = UDim2.new(1, -10, 1, 0),
+        Size = UDim2.new(1, -15, 1, 0),
         BackgroundTransparency = 1,
         Parent = category.Button
+    })
+
+    category.TabHolder = InstanceUtils.Create("Frame", {
+        Name = "Tabs",
+        Size = UDim2.new(1, 0, 0, 0),
+        BackgroundTransparency = 1,
+        AutomaticSize = Enum.AutomaticSize.Y,
+        Parent = category.Container
+    })
+    InstanceUtils.Create("UIListLayout", {
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 2),
+        Parent = category.TabHolder
     })
 
     local function toggle()
         category.Expanded = not category.Expanded
         category.Icon.Text = category.Expanded and "▼" or "►"
-        for _, tab in pairs(category.Tabs) do
-            tab.Button.Visible = category.Expanded
-        end
+        category.TabHolder.Visible = category.Expanded
     end
 
     category.Button.MouseButton1Click:Connect(toggle)
 
     function category:CreateTab(tabName, icon)
         local tab = self._window:CreateTab(tabName, icon)
-        tab.Button.Parent = self._window.SidebarContent
-        tab.Button.LayoutOrder = category.Button.LayoutOrder + #category.Tabs + 1
+        tab.Button.Parent = category.TabHolder
         
         -- Adjust tab button style for sub-item look
-        tab.Button.Size = UDim2.new(1, -20, 0, 28)
-        tab.Button.Position = UDim2.new(0, 15, 0, 0)
+        tab.Button.Size = UDim2.new(1, -25, 0, 28)
+        tab.Button.Position = UDim2.new(0, 20, 0, 0)
         tab.Button.TextSize = Theme.Get("TextSizeTab")
         tab.Button.TextColor3 = Theme.Get("SecondaryText")
         
