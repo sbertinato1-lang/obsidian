@@ -885,12 +885,16 @@ return Button
 
 end
 
+-- ============================================================
+-- PATCH: Components/Toggle
+-- Replace the existing Toggle.new function body
+-- ============================================================
+
 _modules["Components/Toggle"] = function()
 local Component = _require("Core/Component")
 local Theme = _require("Theme")
 local InstanceUtils = _require("Utils/Instance")
 local Tween = _require("Services/Tween")
-
 local Icons = _require("Utils/Icons")
 
 local Toggle = setmetatable({}, Component)
@@ -919,7 +923,7 @@ function Toggle.new(section, options)
         Size = UDim2.new(1, -30, 1, 0),
         Position = UDim2.new(0, 10, 0, 0),
         BackgroundTransparency = 1,
-        ZIndex = 50, -- Explicit ZIndex
+        ZIndex = 50,
         Parent = self.Instance
     })
 
@@ -944,12 +948,18 @@ function Toggle.new(section, options)
         Parent = self.Box
     })
 
-    local function update()
+    -- Shared visual update, no callback fire
+    local function applyVisual()
         self.Checkmark.Visible = self.Value
         Tween.Play(self.Box, {
             BackgroundColor3 = self.Value and Theme.Get("Secondary") or Theme.Get("Surface")
         })
-        
+    end
+
+    -- User interaction: visual + callback
+    local function onToggle()
+        self.Value = not self.Value
+        applyVisual()
         if options.Callback then
             options.Callback(self.Value)
         end
@@ -957,8 +967,7 @@ function Toggle.new(section, options)
 
     self.Instance.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            self.Value = not self.Value
-            update()
+            onToggle()
         end
     end)
 
@@ -970,14 +979,26 @@ function Toggle.new(section, options)
         Tween.Play(self.Box, {BackgroundColor3 = self.Value and Theme.Get("Secondary") or Theme.Get("Surface")})
     end)
 
-    update()
+    -- GetValue / SetValue wired for config system
+    function self:GetValue()
+        return self.Value
+    end
 
+    function self:SetValue(val)
+        self.Value = val and true or false
+        applyVisual()
+        if options.Callback then
+            options.Callback(self.Value)
+        end
+    end
+
+    applyVisual()
     return self
 end
 
 return Toggle
-
 end
+
 
 _modules["Components/Slider"] = function()
 local UserInputService = game:GetService("UserInputService")
@@ -1024,7 +1045,6 @@ function Slider.new(section, options)
         TextSize = Theme.Get("TextSizeDescription"),
         TextColor3 = Theme.Get("SecondaryText"),
         TextXAlignment = Enum.TextXAlignment.Right,
-        RichText = true,
         Size = UDim2.new(0, 50, 0, 20),
         Position = UDim2.new(1, -50, 0, 0),
         BackgroundTransparency = 1,
@@ -1051,13 +1071,19 @@ function Slider.new(section, options)
     })
     InstanceUtils.ApplyCorner(self.Fill, 2)
 
-    local function update(input)
-        local pos = math.clamp((input.Position.X - self.Track.AbsolutePosition.X) / self.Track.AbsoluteSize.X, 0, 1)
-        self.Value = math.floor(self.Min + (self.Max - self.Min) * pos)
-        
+    local function applyVisual()
+        local pos = math.clamp((self.Value - self.Min) / (self.Max - self.Min), 0, 1)
         Tween.Play(self.Fill, {Size = UDim2.new(pos, 0, 1, 0)}, 0.1)
         self.ValueLabel.Text = tostring(self.Value)
-        
+    end
+
+    local function updateFromInput(input)
+        local pos = math.clamp(
+            (input.Position.X - self.Track.AbsolutePosition.X) / self.Track.AbsoluteSize.X,
+            0, 1
+        )
+        self.Value = math.floor(self.Min + (self.Max - self.Min) * pos)
+        applyVisual()
         if options.Callback then
             options.Callback(self.Value)
         end
@@ -1076,7 +1102,7 @@ function Slider.new(section, options)
     self.Track.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             self._dragging = true
-            update(input)
+            updateFromInput(input)
         end
     end)
 
@@ -1088,19 +1114,27 @@ function Slider.new(section, options)
 
     UserInputService.InputChanged:Connect(function(input)
         if self._dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            update(input)
+            updateFromInput(input)
         end
     end)
 
-    -- Set initial value
-    local initialPos = (self.Value - self.Min) / (self.Max - self.Min)
-    self.Fill.Size = UDim2.new(initialPos, 0, 1, 0)
+    function self:GetValue()
+        return self.Value
+    end
 
+    function self:SetValue(val)
+        self.Value = math.clamp(math.floor(tonumber(val) or self.Min), self.Min, self.Max)
+        applyVisual()
+        if options.Callback then
+            options.Callback(self.Value)
+        end
+    end
+
+    applyVisual()
     return self
 end
 
 return Slider
-
 end
 
 _modules["Components/Dropdown"] = function()
@@ -1250,7 +1284,6 @@ _modules["Components/Dropdown"] = function()
 
                 if matchesSearch then
                     visibleCount = visibleCount + 1
-                    -- FIX: compare Value as a plain string, not a table key
                     local isSelected = (self.Value == opt)
 
                     local btn = InstanceUtils.Create("TextButton", {
@@ -1267,12 +1300,11 @@ _modules["Components/Dropdown"] = function()
                     })
 
                     btn.MouseEnter:Connect(function()
-                        Tween.Play(btn, { BackgroundTransparency = isSelected and 0.3 or 0.8 })
+                        Tween.Play(btn, {BackgroundTransparency = isSelected and 0.3 or 0.8})
                     end)
                     btn.MouseLeave:Connect(function()
-                        Tween.Play(btn, { BackgroundTransparency = isSelected and 0.4 or 1 })
+                        Tween.Play(btn, {BackgroundTransparency = isSelected and 0.4 or 1})
                     end)
-
                     btn.MouseButton1Click:Connect(function()
                         self.Value = opt
                         self.ValueLabel.Text = tostring(opt)
@@ -1287,7 +1319,7 @@ _modules["Components/Dropdown"] = function()
 
             if self.Opened then
                 local targetHeight = visibleCount == 0 and 38 or math.min(visibleCount * 28 + 38, 178)
-                Tween.Play(self.Container, { Size = UDim2.new(1, 0, 0, targetHeight) }, 0.15)
+                Tween.Play(self.Container, {Size = UDim2.new(1, 0, 0, targetHeight)}, 0.15)
             end
         end
 
@@ -1297,20 +1329,31 @@ _modules["Components/Dropdown"] = function()
             updateOptions()
         end)
 
-        self.SetOptions = function(self, newOptions)
+        -- ── Public API ───────────────────────────────────────────────────────
+
+        function self:SetOptions(newOptions)
             self.Options = newOptions
             updateOptions()
         end
 
-        self.SetValue = function(self, value)
-            self.Value = value
-            self.ValueLabel.Text = tostring(value)
-            updateOptions()
+        -- Config system: GetValue returns the raw value (string/number/etc.)
+        function self:GetValue()
+            return self.Value
         end
 
-        self.Toggle = function(self, state)
+        -- Config system: SetValue updates display and internal state, fires callback
+        function self:SetValue(val)
+            self.Value = val
+            self.ValueLabel.Text = tostring(val)
+            updateOptions()
+            if options.Callback then
+                options.Callback(self.Value)
+            end
+        end
+
+        function self:Toggle(state)
             self.Opened = state
-            Tween.Play(self.Icon, { Rotation = state and 180 or 0 })
+            Tween.Play(self.Icon, {Rotation = state and 180 or 0})
 
             if state then
                 self.Container.Visible = true
@@ -1323,9 +1366,9 @@ _modules["Components/Dropdown"] = function()
                     end
                 end
                 local targetHeight = visibleCount == 0 and 38 or math.min(visibleCount * 28 + 38, 178)
-                Tween.Play(self.Container, { Size = UDim2.new(1, 0, 0, targetHeight) }, 0.2)
+                Tween.Play(self.Container, {Size = UDim2.new(1, 0, 0, targetHeight)}, 0.2)
             else
-                local tween = Tween.Play(self.Container, { Size = UDim2.new(1, 0, 0, 0) }, 0.2)
+                local tween = Tween.Play(self.Container, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
                 tween.Completed:Connect(function()
                     if not self.Opened then
                         task.defer(function()
@@ -1338,7 +1381,6 @@ _modules["Components/Dropdown"] = function()
             end
         end
 
-        -- FIX: MouseButton1Click on the TextButton directly — no InputBegan competition
         self.Button.MouseButton1Click:Connect(function()
             self:Toggle(not self.Opened)
         end)
@@ -1667,32 +1709,31 @@ function Textbox.new(section, options)
     })
 
     self.InputContainer = InstanceUtils.Create("Frame", {
-	    Name = "InputContainer",
-	    Size = UDim2.new(0.5, -5, 0, 24),
-	    Position = UDim2.new(0.5, 5, 0.5, -12),
-	    BackgroundColor3 = Theme.Get("Surface"),
-	    ClipsDescendants = true,
-	    Parent = self.Instance
-	})
-		
+        Name = "InputContainer",
+        Size = UDim2.new(0.5, -5, 0, 24),
+        Position = UDim2.new(0.5, 5, 0.5, -12),
+        BackgroundColor3 = Theme.Get("Surface"),
+        ClipsDescendants = true,
+        Parent = self.Instance
+    })
     InstanceUtils.ApplyCorner(self.InputContainer, 4)
     InstanceUtils.ApplyStroke(self.InputContainer, Theme.Get("Border"), 1)
 
     self.Input = InstanceUtils.Create("TextBox", {
-	    Text = options.Default or "",
-	    PlaceholderText = options.Placeholder or "Type here...",
-	    Font = Theme.Get("FontDescription"),
-	    TextSize = Theme.Get("TextSizeDescription"),
-	    TextColor3 = Theme.Get("Text"),
-	    PlaceholderColor3 = Theme.Get("SecondaryText"),
-	    Size = UDim2.new(1, -10, 1, 0),
-	    Position = UDim2.new(0, 5, 0, 0),
-	    BackgroundTransparency = 1,
-	    ClearTextOnFocus = options.ClearOnFocus or false,
-	    TextXAlignment = Enum.TextXAlignment.Left,
-	    TextYAlignment = Enum.TextYAlignment.Center,
-	    Parent = self.InputContainer
-	})
+        Text = options.Default or "",
+        PlaceholderText = options.Placeholder or "Type here...",
+        Font = Theme.Get("FontDescription"),
+        TextSize = Theme.Get("TextSizeDescription"),
+        TextColor3 = Theme.Get("Text"),
+        PlaceholderColor3 = Theme.Get("SecondaryText"),
+        Size = UDim2.new(1, -10, 1, 0),
+        Position = UDim2.new(0, 5, 0, 0),
+        BackgroundTransparency = 1,
+        ClearTextOnFocus = options.ClearOnFocus or false,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Center,
+        Parent = self.InputContainer
+    })
 
     self.Input.Focused:Connect(function()
         Tween.Play(self.InputContainer, {BackgroundColor3 = Theme.Get("Secondary")})
@@ -1707,12 +1748,24 @@ function Textbox.new(section, options)
         end
     end)
 
+    function self:GetValue()
+        return self.Input.Text
+    end
+
+    function self:SetValue(val)
+        self.Input.Text = tostring(val or "")
+        -- fire callback so downstream state stays in sync
+        if options.Callback then
+            options.Callback(self.Input.Text, false)
+        end
+    end
+
     return self
 end
 
 return Textbox
-
 end
+
 
 _modules["Components/Keybind"] = function()
 local UserInputService = game:GetService("UserInputService")
@@ -1797,8 +1850,6 @@ function Keybind.new(section, options)
         if self.Binding then
             if input.UserInputType == Enum.UserInputType.Keyboard then
                 stopBinding(input.KeyCode)
-            elseif input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
-                -- Optional: handle mouse buttons as binds
             end
         elseif input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == self.Value then
             if options.Callback then
@@ -1807,11 +1858,34 @@ function Keybind.new(section, options)
         end
     end)
 
+    function self:GetValue()
+        -- Serialize to string for JSON config
+        return self.Value.Name
+    end
+
+    function self:SetValue(val)
+        -- Accept either a KeyCode enum or a string name
+        local key
+        if typeof(val) == "EnumItem" then
+            key = val
+        else
+            local ok, resolved = pcall(function()
+                return Enum.KeyCode[tostring(val)]
+            end)
+            key = (ok and resolved) or self.Value
+        end
+        self.Value = key
+        self.Button.Text = key.Name
+        self.Button.TextColor3 = Theme.Get("SecondaryText")
+        if options.Callback then
+            options.Callback(key)
+        end
+    end
+
     return self
 end
 
 return Keybind
-
 end
 
 _modules["Components/ColorPicker"] = function()
@@ -1820,7 +1894,6 @@ local Component = _require("Core/Component")
 local Theme = _require("Theme")
 local InstanceUtils = _require("Utils/Instance")
 local Tween = _require("Services/Tween")
-
 local Icons = _require("Utils/Icons")
 
 local ColorPicker = setmetatable({}, Component)
@@ -1837,7 +1910,7 @@ function ColorPicker.new(section, options)
         Name = "ColorPicker",
         Size = UDim2.new(0.95, 0, 0, Theme.Get("ComponentHeight")),
         BackgroundTransparency = 1,
-        ClipsDescendants = false, -- Prevent clipping the button or labels
+        ClipsDescendants = false,
         Parent = section.Content
     })
 
@@ -1860,22 +1933,22 @@ function ColorPicker.new(section, options)
         Size = UDim2.new(0, 40, 0, 20),
         Position = UDim2.new(1, -50, 0.5, -10),
         AutoButtonColor = false,
-        ZIndex = 10, -- Ensure it's clickable
+        ZIndex = 10,
         Parent = self.Instance
     })
     InstanceUtils.ApplyCorner(self.Button, 4)
     InstanceUtils.ApplyStroke(self.Button, Theme.Get("Border"), 1)
 
-    -- Detect clicks reliably
     self.Button.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             self:Toggle(not self.Opened)
         end
     end)
+
     self.PickerFrame = InstanceUtils.Create("Frame", {
         Name = "Picker",
-        Size = UDim2.new(0, 150, 0, 0), -- Animated height
-        Position = UDim2.new(0, 0, 0, 0), -- Will be updated on open
+        Size = UDim2.new(0, 150, 0, 0),
+        Position = UDim2.new(0, 0, 0, 0),
         BackgroundColor3 = Theme.Get("Secondary"),
         BorderSizePixel = 0,
         ClipsDescendants = true,
@@ -1890,7 +1963,7 @@ function ColorPicker.new(section, options)
         Size = UDim2.new(1, -10, 1, -10),
         Position = UDim2.new(0, 5, 0, 5),
         BackgroundTransparency = 1,
-        ZIndex = 1001, -- Higher than PickerFrame
+        ZIndex = 1001,
         Parent = self.PickerFrame
     })
     InstanceUtils.Create("UIGridLayout", {
@@ -1901,9 +1974,9 @@ function ColorPicker.new(section, options)
 
     local colors = {
         Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 200), Color3.fromRGB(100, 100, 100), Color3.fromRGB(50, 50, 50),
-        Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 255, 0), Color3.fromRGB(0, 0, 255), Color3.fromRGB(255, 255, 0),
-        Color3.fromRGB(255, 0, 255), Color3.fromRGB(0, 255, 255), Color3.fromRGB(255, 128, 0), Color3.fromRGB(128, 0, 255),
-        Color3.fromRGB(100, 0, 0), Color3.fromRGB(0, 100, 0), Color3.fromRGB(0, 0, 100), Color3.fromRGB(100, 100, 0)
+        Color3.fromRGB(255, 0, 0),     Color3.fromRGB(0, 255, 0),     Color3.fromRGB(0, 0, 255),     Color3.fromRGB(255, 255, 0),
+        Color3.fromRGB(255, 0, 255),   Color3.fromRGB(0, 255, 255),   Color3.fromRGB(255, 128, 0),   Color3.fromRGB(128, 0, 255),
+        Color3.fromRGB(100, 0, 0),     Color3.fromRGB(0, 100, 0),     Color3.fromRGB(0, 0, 100),     Color3.fromRGB(100, 100, 0)
     }
 
     for _, color in pairs(colors) do
@@ -1911,18 +1984,17 @@ function ColorPicker.new(section, options)
             Text = "",
             BackgroundColor3 = color,
             BorderSizePixel = 0,
-            ZIndex = 1002, -- Higher than grid
+            ZIndex = 1002,
             Parent = grid
         })
         InstanceUtils.ApplyCorner(colorBtn, 2)
-        
+
         colorBtn.MouseEnter:Connect(function()
             Tween.Play(colorBtn, {Size = UDim2.new(0, 26, 0, 26)})
         end)
         colorBtn.MouseLeave:Connect(function()
             Tween.Play(colorBtn, {Size = UDim2.new(0, 24, 0, 24)})
         end)
-
         colorBtn.MouseButton1Click:Connect(function()
             self:SetValue(color)
             self:Toggle(false)
@@ -1932,44 +2004,68 @@ function ColorPicker.new(section, options)
         end)
     end
 
-    self.Toggle = function(self, state)
+    -- ── Toggle open/close ────────────────────────────────────────────────────
+    function self:Toggle(state)
         self.Opened = state
         if state then
-            -- Position relative to button
             local absPos = self.Button.AbsolutePosition
-            
-            -- Fallback if AbsolutePosition is 0,0 (wait for render)
             local attempts = 0
             while absPos.X == 0 and absPos.Y == 0 and attempts < 5 do
                 task.wait()
                 absPos = self.Button.AbsolutePosition
                 attempts = attempts + 1
             end
-            
             self.PickerFrame.Position = UDim2.new(0, absPos.X - 155, 0, absPos.Y)
             self.PickerFrame.Visible = true
             Tween.Play(self.PickerFrame, {Size = UDim2.new(0, 150, 0, 120)}, 0.2)
         else
-            local targetSize = UDim2.new(0, 150, 0, 0)
-            local tween = Tween.Play(self.PickerFrame, {Size = targetSize}, 0.2)
+            local tween = Tween.Play(self.PickerFrame, {Size = UDim2.new(0, 150, 0, 0)}, 0.2)
             tween.Completed:Connect(function()
                 if not self.Opened then
-                    self.PickerFrame.Visible = false
+                    task.defer(function()
+                        if not self.Opened then
+                            self.PickerFrame.Visible = false
+                        end
+                    end)
                 end
             end)
+        end
+    end
+
+    -- ── Config system: GetValue / SetValue ───────────────────────────────────
+    function self:GetValue()
+        -- Serialise to {R,G,B} integers so JSON round-trips cleanly
+        return {
+            R = math.floor(self.Value.R * 255),
+            G = math.floor(self.Value.G * 255),
+            B = math.floor(self.Value.B * 255)
+        }
+    end
+
+    function self:SetValue(val)
+        local color
+        if typeof(val) == "Color3" then
+            color = val
+        elseif type(val) == "table" and val.R ~= nil then
+            color = Color3.fromRGB(
+                math.clamp(val.R, 0, 255),
+                math.clamp(val.G, 0, 255),
+                math.clamp(val.B, 0, 255)
+            )
+        else
+            return  -- unknown format, do nothing
+        end
+        self.Value = color
+        self.Button.BackgroundColor3 = color
+        if options.Callback then
+            options.Callback(color)
         end
     end
 
     return self
 end
 
-function ColorPicker:SetValue(color)
-    self.Value = color
-    self.Button.BackgroundColor3 = color
-end
-
 return ColorPicker
-
 end
 
 _modules["Components/Separator"] = function()
@@ -2598,82 +2694,114 @@ local Config = _require("Systems/Config")
 local Icons = _require("Utils/Icons")
 local UserInputService = game:GetService("UserInputService")
 
---[[
-	Core UI Manager for Obsidian.
-]]
-
 local Library = {}
 Library.__index = Library
 Library.Icons = Icons
 
 function Library.new()
-	local self = setmetatable({
-		_cleanup = Cleanup.new(),
-		Windows = {},
-		Components = {}, -- Component registry for configs
-		ToggleKey = Enum.KeyCode.RightControl,
-		Visible = true,
-		_settings = {}
-	}, Library)
+    local self = setmetatable({
+        _cleanup = Cleanup.new(),
+        Windows = {},
+        Components = {},   -- flag → component, populated by section:Add*()
+        ToggleKey = Enum.KeyCode.RightControl,
+        Visible = true,
+        _settings = {}
+    }, Library)
 
-	-- Global Visibility Toggle
-	UserInputService.InputBegan:Connect(function(input, processed)
-		if not processed and input.KeyCode == self.ToggleKey then
-			self:Toggle()
-		end
-	end)
+    UserInputService.InputBegan:Connect(function(input, processed)
+        if not processed and input.KeyCode == self.ToggleKey then
+            self:Toggle()
+        end
+    end)
 
-	return self
+    return self
 end
 
 function Library:CreateWindow(options)
-	options = options or {}
-	options.Title = options.Title or "Obsidian"
-	options.Badge = options.Badge or ""
-	options.Version = options.Version or ""
-	options.Library = self
-	
-	local window = Window.new(options)
-	self._cleanup:Add(window)
-	self.Windows[#self.Windows + 1] = window
-	return window
+    options = options or {}
+    options.Title   = options.Title   or "Obsidian"
+    options.Badge   = options.Badge   or ""
+    options.Version = options.Version or ""
+    options.Library = self
+
+    local window = Window.new(options)
+    self._cleanup:Add(window)
+    self.Windows[#self.Windows + 1] = window
+    return window
 end
 
 function Library:Notify(options)
-	Notifications.Notify(options)
+    Notifications.Notify(options)
 end
 
 function Library:CreateConfig(options)
-	return Config.new(self, options)
+    return Config.new(self, options)
 end
 
 function Library:SetToggleKey(key)
-	self.ToggleKey = key
+    self.ToggleKey = key
 end
 
 function Library:Toggle()
-	self.Visible = not self.Visible
-	for _, window in pairs(self.Windows) do
-		window:SetVisible(self.Visible)
-	end
+    self.Visible = not self.Visible
+    for _, window in pairs(self.Windows) do
+        window:SetVisible(self.Visible)
+    end
 end
 
 function Library:SetTheme(themeConfig)
-	Theme.Set(themeConfig)
+    Theme.Set(themeConfig)
 end
 
 function Library:Destroy()
-	self._cleanup:Destroy()
+    self._cleanup:Destroy()
 end
 
--- Create a singleton instance for global access if needed, or return the class
+-- ── Config helpers ───────────────────────────────────────────────────────────
+
+-- Reads the current value from every registered component.
+-- Drives config:Save() — do not call manually unless you need the raw table.
+function Library:GetSettings()
+    local settings = {}
+    for flag, component in pairs(self.Components) do
+        if component.GetValue then
+            local ok, val = pcall(function() return component:GetValue() end)
+            if ok then
+                settings[flag] = val
+            end
+        end
+    end
+    return settings
+end
+
+-- Applies a settings table back to every registered component.
+-- Called by config:Load() automatically via CreateConfigUI, or manually.
+-- Each component's SetValue handles its own visual update —
+-- toggles flip their checkmark, sliders move their fill bar, etc.
+function Library:LoadSettings(data)
+    for flag, value in pairs(data) do
+        local component = self.Components[flag]
+        if component and component.SetValue then
+            -- pcall so a single bad/stale flag doesn't abort the whole load
+            pcall(function()
+                component:SetValue(value)
+            end)
+        end
+    end
+end
+
+-- ── Built-in config UI ───────────────────────────────────────────────────────
+
+-- Adds a full "Configuration" section to any tab.
+-- Usage: local cfg = Library:CreateConfigUI(myTab, "MyGameConfigs")
 function Library:CreateConfigUI(tab, folder)
-    local config = self:CreateConfig({Folder = folder})
+    local config = self:CreateConfig({Folder = folder or "ObsidianConfigs"})
     local section = tab:CreateSection("Configuration")
-    
+
     local configList = config:ListConfigs()
-    local selectedConfig = configList[1] or "default"
-    
+    if #configList == 0 then configList = {"default"} end
+    local selectedConfig = configList[1]
+
     local dropdown = section:AddDropdown({
         Name = "Select Config",
         Options = configList,
@@ -2683,42 +2811,43 @@ function Library:CreateConfigUI(tab, folder)
             config:SetFile(val)
         end
     })
-    
-    local input = section:AddTextbox({
-        Name = "New Config Name",
-        Placeholder = "Enter name...",
-        Callback = function(val)
-            -- Just stores the name for saving
-        end
+
+    local nameInput = section:AddTextbox({
+        Name = "Config Name",
+        Placeholder = "Enter name to save as...",
+        Callback = function() end   -- value read on button press, not on change
     })
-    
+
     section:AddButton({
         Name = "Save Config",
         Callback = function()
-            local name = input.Input.Text ~= "" and input.Input.Text or selectedConfig
+            local name = nameInput:GetValue()
+            if name == nil or name == "" then name = selectedConfig end
             if name == "" then name = "default" end
-            
+
             config:SetFile(name)
-            
-            local data = self:GetSettings()
-            config:Save(data)
-            self:Notify({Title = "Config", Content = "Saved " .. name, Type = "Success"})
-            
+            config:Save(self:GetSettings())
+
+            self:Notify({Title = "Config Saved", Content = name, Duration = 3})
+
+            -- Refresh the dropdown list
             local newList = config:ListConfigs()
             dropdown:SetOptions(newList)
             dropdown:SetValue(name)
+            selectedConfig = name
         end
     })
-    
+
     section:AddButton({
         Name = "Load Config",
         Callback = function()
+            config:SetFile(selectedConfig)
             local data = config:Load()
             if data then
                 self:LoadSettings(data)
-                self:Notify({Title = "Config", Content = "Loaded " .. selectedConfig, Type = "Success"})
+                self:Notify({Title = "Config Loaded", Content = selectedConfig, Duration = 3})
             else
-                self:Notify({Title = "Config", Content = "Failed to load " .. selectedConfig, Type = "Error"})
+                self:Notify({Title = "Load Failed", Content = "No file: " .. selectedConfig, Duration = 3})
             end
         end
     })
@@ -2726,32 +2855,15 @@ function Library:CreateConfigUI(tab, folder)
     section:AddButton({
         Name = "Refresh List",
         Callback = function()
-            dropdown:SetOptions(config:ListConfigs())
+            local newList = config:ListConfigs()
+            dropdown:SetOptions(newList)
         end
     })
-    
+
     return config
 end
 
-function Library:GetSettings()
-    local settings = {}
-    for flag, component in pairs(self.Components) do
-        settings[flag] = component:GetValue()
-    end
-    return settings
-end
-
-function Library:LoadSettings(data)
-    for flag, value in pairs(data) do
-        local component = self.Components[flag]
-        if component then
-            component:SetValue(value)
-        end
-    end
-end
-
 return Library.new()
-
 end
 
 return _modules["Library"]()
